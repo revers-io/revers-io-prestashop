@@ -1,0 +1,9 @@
+{
+  "name": "invertus/reversiointegration",
+  "description": "Revers.io integration",
+  "autoload": {
+    "psr-4": {
+      "ReversIO\\": "src/"
+    }
+  }
+}

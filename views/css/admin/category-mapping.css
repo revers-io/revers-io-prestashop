@@ -1,0 +1,105 @@
+/*
+ *Copyright (c) 2019 Revers.io
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is furnished
+ * to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @author revers.io
+ * @copyright Copyright (c) permanent, Revers.io
+ * @license   Revers.io
+ * @see       /LICENSE
+ */
+
+.category-map-container {
+    display: inline-block;
+    min-width: 500px;
+}
+
+.category-map-part {
+    padding-left: 20px;
+}
+
+.heading-container {
+    padding: 5px;
+    display: inline-block;
+}
+
+.heading-container .category-map-heading,
+.heading-container .category-map-heading i {
+    color: #555;
+    font-size: 16px;
+}
+
+.heading-container .category-map-heading:focus {
+    outline: none;
+    color: #555;
+    text-decoration: none;
+}
+
+.heading-container .category-map-heading:hover {
+    color: #555;
+    text-decoration: none;
+}
+
+.category-map-heading i{
+    position: relative;
+}
+
+.category-map-heading[data-toggle="collapse"] i {
+    -webkit-transform: rotate(0);
+    -moz-transform:    rotate(0);
+    -ms-transform:     rotate(0);
+    -o-transform:      rotate(0);
+    transform:         rotate(0);
+}
+
+.category-map-heading[data-toggle="collapse"].collapsed i {
+    -webkit-transform: rotate(-90deg);
+    -moz-transform:    rotate(-90deg);
+    -ms-transform:     rotate(-90deg);
+    -o-transform:      rotate(-90deg);
+    transform:         rotate(-90deg);
+}
+
+select.model-list-select {
+    width: 250px;
+}
+
+.model-list-container {
+    float: right;
+}
+
+.model-list-container .chosen-single {
+    padding-right: 20px;
+    width: 250px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.padding-values{
+    padding: 0;
+    margin: 0;
+}
+
+.no-transition {
+    -webkit-transition: height 0.0001s ease !important;
+    -moz-transition: height 0.0001s ease !important;
+    -ms-transition: height 0.0001s ease !important;
+    -o-transition: height 0.0001s ease !important;
+    transition: height 0.0001s ease !important;
+}
