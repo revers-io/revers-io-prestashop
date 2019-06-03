@@ -1,0 +1,148 @@
+services:
+  reversiointegration.module:
+    class: 'ReversIOIntegration'
+    factory: ['Module', 'getInstanceByName']
+    arguments:
+      - 'reversiointegration'
+
+  installer:
+    class: 'ReversIO\Install\Installer'
+    arguments:
+      - '@reversiointegration.module'
+      - '@databaseInstall'
+      - '@ordersAdmin'
+      - '%module_settings%'
+
+  uninstaller:
+    class: 'ReversIO\Uninstall\Uninstaller'
+    arguments:
+      - '@reversiointegration.module'
+      - '@databaseInstall'
+
+  databaseInstall:
+    class: 'ReversIO\Install\DatabaseInstall'
+    arguments:
+      - '@colourGetter'
+      - '@nameGetter'
+
+  productImporter:
+    class: 'ReversIO\Services\Product\ProductService'
+    arguments:
+      - '@categoryMapService'
+
+  ordersImport:
+    class: 'ReversIO\Services\Orders\OrdersImporter'
+    arguments:
+      - '@orderRepository'
+      - '@reversiointegration.module'
+
+  orderRepository:
+    class: 'ReversIO\Repository\OrderRepository'
+    arguments:
+      - '@colourGetter'
+
+  logsRepository:
+    class: 'ReversIO\Repository\Logs\LogsRepository'
+
+  categoryMapRepository:
+    class: 'ReversIO\Repository\CategoryMapRepository'
+
+  categoryRepository:
+    class: 'ReversIO\Repository\CategoryRepository'
+
+  loggerService:
+    class: 'ReversIO\Repository\Logs\Logger'
+    arguments:
+      - '@orderRepository'
+      - '@productRepository'
+
+  reversIoApiConnect:
+    class: 'ReversIO\Services\APIConnect\ReversIOApi'
+    arguments:
+      - '@productImporter'
+      - '@ordersImport'
+      - '@orderRepository'
+      - '@logsRepository'
+      - '@ordersRetrieveService'
+      - '@loggerService'
+      - '@token'
+      - '@proxyApiClient'
+      - '@productExportRepository'
+      - '@categoryMapRepository'
+      - '@categoryRepository'
+      - '@brandService'
+      - '@exportedProductsRepository'
+
+  ordersRetrieveService:
+    class: 'ReversIO\Services\Orders\OrdersRetrieveService'
+    arguments:
+      - '@reversiointegration.module'
+      -
+  productForExportService:
+    class: 'ReversIO\Services\Product\ProductsForExportService'
+    arguments:
+      - '@productsForExportRepository'
+      - '@exportedProductsRepository'
+
+  categoryMapService:
+    class: 'ReversIO\Services\CategoryMapService'
+    arguments:
+      - '@categoryMapRepository'
+
+  brandService:
+    class: 'ReversIO\Services\Brand\BrandService'
+    arguments:
+      - '@productRepository'
+
+  ordersAdmin:
+    class: 'ReversIO\Services\Orders\OrderListBuilder'
+    arguments:
+      - '@orderRepository'
+
+  colourGetter:
+    class: 'ReversIO\Services\Getters\ColourGetter'
+
+  nameGetter:
+    class: 'ReversIO\Services\Getters\ReversIoSettingNameGetter'
+
+  autentification:
+    class: 'ReversIO\Services\Autentification\APIAuthentication'
+    arguments:
+      - '@token'
+
+  logService:
+    class: 'ReversIO\Services\Log\LogService'
+    arguments:
+      - '@loggerService'
+
+  productRepository:
+    class: 'ReversIO\Repository\ProductRepository'
+
+  productsForExportRepository:
+    class: 'ReversIO\Repository\ProductsForExportRepository'
+
+  exportedProductsRepository:
+    class: 'ReversIO\Repository\ExportedProductsRepository'
+
+  clientFactory:
+    class: 'ReversIO\Factory\ClientFactory'
+
+  apiClient:
+    class: 'ReversIO\Services\APIConnect\ApiClient'
+    arguments:
+      - '@clientFactory'
+
+  token:
+    class: 'ReversIO\Services\APIConnect\Token'
+
+  proxyApiClient:
+    class: 'ReversIO\Proxy\ProxyApiClient'
+    arguments:
+      - '@token'
+      - '@apiClient'
+
+  ordersListingRepository:
+    class: 'ReversIO\Repository\OrdersListingRepository'
+
+  productExportRepository:
+    class: 'ReversIO\Repository\ProductsForExportRepository'
