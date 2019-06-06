@@ -36,9 +36,9 @@
             <table class="table reversio row-margin-bottom">
                 <tbody>
                     <tr>
-                        <td style="background-color:#DC143C;color:white">{l s="Error."  d='Admin.Global'}
-                            <a href="{$logLink}">{l s="Click here" d='Admin.Global'}</a>
-                            {l s=" to go to error log." d='Admin.Global'}
+                        <td style="background-color:#DC143C;color:white">{l s="Error."  mod='reversiointegration'}
+                            <a href="{$logLink}">{l s="Click here" mod='reversiointegration'}</a>
+                            {l s=" to go to error log." mod='reversiointegration'}
                         </td>
                         <td style="background-color:#DC143C;color:white">{dateFormat date=$logCreated full=true}</td>
                     </tr>

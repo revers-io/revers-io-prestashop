@@ -26,10 +26,10 @@
 *}
 
 <section id="reversio" class="box">
-    <h4>{l s='Revers.io' d='reversiointegration'}</h4>
+    <h4>{l s='Revers.io' mod='reversiointegration'}</h4>
 
     <footer class="form-footer text-sm-left">
         <input type="hidden" name="id_order" value="15">
-        <a href="{$reversIoLink}" class="btn btn-primary form-control-submit">{l s='Check status on Revers.io' d='reversiointegration'}</a>
+        <a href="{$reversIoLink}" class="btn btn-primary form-control-submit">{l s='Check status on Revers.io' mod='reversiointegration'}</a>
     </footer>
 </section>
