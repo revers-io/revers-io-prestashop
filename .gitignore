@@ -1,6 +1,5 @@
 node_modules/*
 vendor/*
-translations/*
 img/*
 .idea
 var
