@@ -29,55 +29,25 @@
 namespace ReversIO\Repository;
 
 use Db;
-use DbQuery;
+use ReversIO\Config\Config;
 
-class CategoryMapRepository
+/**
+ * Created by PhpStorm.
+ * User: diana
+ * Date: 19.6.7
+ * Time: 09.11
+ */
+
+class TabRepository
 {
-    public function getAllMappedCategories()
+    public function getInvisibleTabId()
     {
-        $query = new DbQuery();
+        $query = new \DbQuery();
 
-        $query->select('api_category_id, id_category');
-        $query->from('revers_io_category_map');
-
-        $db = Db::getInstance();
-
-        $resource = $db->query($query);
-        $result = array();
-
-        while ($row = $db->nextRow($resource)) {
-            $result[$row['id_category']] = $row['api_category_id'];
-        }
-
-        return $result;
-    }
-
-    public function getMappedCategoryById($id)
-    {
-        $query = new DbQuery();
-
-        $query->select('id_category_map');
-        $query->from('revers_io_category_map');
-        $query->where('id_category = ' . (int) $id);
+        $query->select('id_tab');
+        $query->from('tab');
+        $query->where('class_name = "'.pSQL(Config::CONTROLLER_INVISIBLE).'"');
 
         return Db::getInstance()->getValue($query);
-    }
-
-    public function updateMappedCategory($categoryId, $apiCategoryId)
-    {
-        return Db::getInstance()->update(
-            'revers_io_category_map',
-            array(
-                'api_category_id' => pSQL($apiCategoryId)
-            ),
-            'id_category = ' . (int) $categoryId
-        );
-    }
-
-    public function deleteCategory($categoryId)
-    {
-        $sql = 'DELETE FROM '._DB_PREFIX_.'revers_io_category_map WHERE id_category = '. (int) $categoryId;
-
-        return Db::getInstance()->execute($sql);
     }
 }

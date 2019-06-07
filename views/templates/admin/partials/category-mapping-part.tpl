@@ -37,7 +37,7 @@
 
     <div class="model-list-container">
         <select class="model-list-select chosen" name="{$category.id_category}-modelList">
-            <option value="0" disabled {if $category.modelType == 0}selected{/if}>
+            <option value="0" {if $category.modelType == 0}selected{/if}>
                 {l s='Select model type' mod='reversiointegration'}
             </option>
             {html_options options=$modelTypesList selected=$category.modelType}
@@ -47,8 +47,8 @@
     {if isset($category.children)}
         <div id="{$category.link_rewrite}" class="js-accordion-body accordion-body collapse no-transition">
             <div class="accordion-inner">
-                {foreach $category.children as $category}
-                    {include file='./category-mapping-part.tpl' category=$category}
+                {foreach $category.children as $categoryChildren}
+                    {include file='./category-mapping-part.tpl' category=$categoryChildren}
                 {/foreach}
             </div>
         </div>

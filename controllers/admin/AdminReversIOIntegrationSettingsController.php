@@ -28,6 +28,7 @@
 
 use ReversIO\Controller\ReversIOAbstractAdminController;
 use ReversIO\Config\Config;
+use ReversIO\Repository\TabRepository;
 use ReversIO\Services\Autentification\APIAuthentication;
 
 class AdminReversIOIntegrationSettingsController extends ReversIOAbstractAdminController
@@ -182,6 +183,12 @@ class AdminReversIOIntegrationSettingsController extends ReversIOAbstractAdminCo
         /** @var APIAuthentication $settingAuthentication */
         $settingAuthentication = $this->module->getContainer()->get('autentification');
 
+
+        /** @var TabRepository $tab */
+        $tab = $this->module->getContainer()->get('tabRepository');
+
+        $parentTabId = $tab->getInvisibleTabId();
+
         /** Delete logs when the controller is loaded */
         if (Configuration::get(Config::STORE_LOGS) !== "0"
             && Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
@@ -193,6 +200,7 @@ class AdminReversIOIntegrationSettingsController extends ReversIOAbstractAdminCo
         if (Tools::isSubmit('submitReversIOAuthentication') &&
             (Tools::isSubmit(Config::PUBLIC_KEY) && Tools::isSubmit(Config::SECRET_KEY))
         ) {
+
             Configuration::updateValue(Config::TEST_MODE_SETTING, Tools::getValue(Config::TEST_MODE_SETTING));
             Configuration::updateValue(Config::PUBLIC_KEY, Tools::getValue(Config::PUBLIC_KEY));
             Configuration::updateValue(Config::SECRET_KEY, Tools::getValue(Config::SECRET_KEY));
@@ -203,14 +211,14 @@ class AdminReversIOIntegrationSettingsController extends ReversIOAbstractAdminCo
             );
 
             if ($authenticationResponse) {
-                $this->showHideModuleTabs(1);
+                $this->showHideModuleTabs(1, $parentTabId);
                 $this->confirmations[] = $this->l('Successfully connected to Revers.io API.');
             }
 
             if (!$authenticationResponse) {
                 $this->errors[] =
                     $this->module->l('Authorisation failed. Please check your API keys.', self::FILENAME);
-                $this->showHideModuleTabs(0);
+                $this->showHideModuleTabs(0, -1);
             }
 
             $this->displayTestModeWarning();

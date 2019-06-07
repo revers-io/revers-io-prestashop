@@ -43,6 +43,7 @@ class ReversIOIntegration extends Module
 
     public function __construct()
     {
+        //@todo : add the translation
         $this->name = 'reversiointegration';
         $this->version = '1.0.0';
         $this->tab = 'others';
@@ -51,6 +52,8 @@ class ReversIOIntegration extends Module
         $this->description = 'Revers.io integration';
 
         parent::__construct();
+
+//        $this->registerHook('moduleRoutes');
 
         $this->requireAutoloader();
         $this->compile();
@@ -89,6 +92,7 @@ class ReversIOIntegration extends Module
     /**
      * Return array
      */
+    //@todo: for 1.6 version need to do the installTabs function
     public function getTabs()
     {
         return [
@@ -117,10 +121,11 @@ class ReversIOIntegration extends Module
             ],
             [
                 'name' => 'Export',
-                'ParentClassName' => Config::CONTROLLER_INVISIBLE,
+                'ParentClassName' => -1,
                 'class_name' => Config::CONTROLLER_EXPORT_LOGS,
                 'module_tab' => true,
                 'visible' => false,
+                'parent' => -1
             ],
         ];
     }
@@ -171,7 +176,7 @@ class ReversIOIntegration extends Module
         }
 //        return $reversIOAPIConnect->putDefaultProducts();
     }
-
+    //@todo: remove the orders status from the database and do the repository with hardcoded data for it
     public function hookActionAdminOrdersListingFieldsModifier($params)
     {
         /** @var \ReversIO\Services\Orders\OrderListBuilder $orderListBuilder */
@@ -217,11 +222,13 @@ class ReversIOIntegration extends Module
         $orderRepository = $this->getContainer()->get('orderRepository');
         $reversIoLink = $orderRepository->getOrderUrlById($params['order']->id);
 
-        $this->context->smarty->assign(array(
-            'reversIoLink' => $reversIoLink,
-        ));
+        if($reversIoLink) {
+            $this->context->smarty->assign(array(
+                'reversIoLink' => $reversIoLink,
+            ));
 
-        return $this->display(__FILE__, 'views/templates/hook/displayOrderDetail.tpl');
+            return $this->display(__FILE__, 'views/templates/hook/displayOrderDetail.tpl');
+        }
     }
 
     public function hookActionObjectProductUpdateAfter($params)
@@ -243,6 +250,29 @@ class ReversIOIntegration extends Module
         /** @var \ReversIO\Services\Product\ProductsForExportService $productForExportService */
         $productForExportService = $this->getContainer()->get('productForExportService');
         $productForExportService->deleteProductFromExport($params['object']->id);
+    }
+
+    public function hookModuleRoutes()
+    {
+        $tabs = $this->getTabs();
+        $controllers = array();
+
+        foreach ($tabs as $tab) {
+            $controllers[] = $tab['class_name'];
+        }
+
+        if (empty($controllers)) {
+            return;
+        }
+
+        if (in_array(Tools::getValue('controller'), $controllers)) {
+            $this->requireAutoloader();
+        }
+    }
+
+    public function isVersion173()
+    {
+        return (bool) version_compare(_PS_VERSION_, '1.7.4', '<');
     }
 
     /**
@@ -278,6 +308,9 @@ class ReversIOIntegration extends Module
     {
         $productIdsArray = [];
 
+        /**
+         * @todo if you only have one value then there is no point of two dimensional array. use one dimensional array like [1,2,3]
+         */
         foreach ($products as $product) {
             $productIdsArray[] = [
                 'id_product' => $product['id_product']

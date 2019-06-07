@@ -146,3 +146,6 @@ services:
 
   productExportRepository:
     class: 'ReversIO\Repository\ProductsForExportRepository'
+
+  tabRepository:
+    class: 'ReversIO\Repository\TabRepository'

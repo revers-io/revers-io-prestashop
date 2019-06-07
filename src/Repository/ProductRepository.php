@@ -55,6 +55,9 @@ class ProductRepository
             'p.id_manufacturer = m.id_manufacturer'
         );
 
+        /**
+         * @todo possible mysqlInjection first you need array_map to map array as integers
+         */
         $query->where('p. id_product IN (' . implode(',', $productIds) . ')');
         $query->where('m. name IS NOT NULL');
         $query->groupBy('m. name');

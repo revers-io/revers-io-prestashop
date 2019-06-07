@@ -20,3 +20,4 @@ parameters:
       - 'actionObjectProductUpdateAfter'
       - 'actionObjectProductDeleteAfter'
       - 'actionObjectProductAddAfter'
+      - 'moduleRoutes'
