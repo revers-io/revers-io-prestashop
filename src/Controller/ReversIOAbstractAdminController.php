@@ -29,6 +29,7 @@
 namespace ReversIO\Controller;
 
 use Configuration;
+use ModuleAdminController;
 use ReversIO\Config\Config;
 use ReversIO\Services\Autentification\APIAuthentication;
 use ReversIOIntegration;
@@ -38,7 +39,7 @@ use Tools;
 /**
  * Class ReversIOAbstractAdminController
  */
-class ReversIOAbstractAdminController extends \ModuleAdminController
+class ReversIOAbstractAdminController extends ModuleAdminController
 {
     const FILENAME = 'ReversIOAbstractAdminController';
 
@@ -58,7 +59,7 @@ class ReversIOAbstractAdminController extends \ModuleAdminController
         $apiSecretKey = Configuration::get(Config::SECRET_KEY);
 
         if (!$settingAuthentication->authentication($apiPublicKey, $apiSecretKey)) {
-            $this->showHideModuleTabs(0);
+            $this->showHideModuleTabs(0, -1);
             $this->redirectToSettings();
         }
 
@@ -88,11 +89,12 @@ class ReversIOAbstractAdminController extends \ModuleAdminController
         Tools::redirectAdmin($this->context->link->getAdminLink(Config::CONTROLLER_CONFIGURATION));
     }
 
-    public function showHideModuleTabs($tabStatus)
+    public function showHideModuleTabs($tabStatus, $parent)
     {
         $moduleTabs = $this->module->getTabs();
 
         foreach ($moduleTabs as $moduleTab) {
+
             if ($moduleTab['class_name'] === Config::CONTROLLER_INVISIBLE
                 || $moduleTab['class_name'] === Config::CONTROLLER_EXPORT_LOGS) {
                 continue;
@@ -101,6 +103,11 @@ class ReversIOAbstractAdminController extends \ModuleAdminController
             if ($moduleTab['class_name'] !== Config::CONTROLLER_CONFIGURATION) {
                 $tabInstance = Tab::getInstanceFromClassName($moduleTab['class_name']);
                 $tabInstance->active = $tabStatus;
+
+                if($this->module->isVersion173()) {
+                    $tabInstance->id_parent = $parent;
+                }
+
                 $tabInstance->update();
             }
         }

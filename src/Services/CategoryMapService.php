@@ -85,6 +85,12 @@ class CategoryMapService
                 continue;
             }
 
+            if($postItemValue === '0') {
+                $this->categoryMapRepository->deleteCategory($categoryId);
+
+                continue;
+            }
+
             $formattedMappedCategories[$categoryId] = $postItemValue;
         }
 
