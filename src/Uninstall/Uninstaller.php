@@ -31,7 +31,9 @@ namespace ReversIO\Uninstall;
 use Configuration;
 use ReversIO\Config\Config;
 use ReversIO\Install\DatabaseInstall;
+use ReversIO\Services\Versions\Versions;
 use ReversIOIntegration;
+use Tab;
 
 class Uninstaller
 {
@@ -43,15 +45,19 @@ class Uninstaller
     /** @var DatabaseInstall */
     private $databaseInstall;
 
+    /** @var Versions */
+    private $version;
+
     /**
      * Uninstall constructor.
      *
      * @param ReversIOIntegration $module
      */
-    public function __construct(ReversIOIntegration $module, DatabaseInstall $databaseInstall)
+    public function __construct(ReversIOIntegration $module, DatabaseInstall $databaseInstall, Versions $version)
     {
         $this->module = $module;
         $this->databaseInstall = $databaseInstall;
+        $this->version = $version;
     }
 
     /**

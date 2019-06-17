@@ -42,16 +42,17 @@ use ReversIO\Repository\OrderRepository;
 use ReversIO\Repository\ProductsForExportRepository;
 use ReversIO\Response\ReversIoResponse;
 use ReversIO\Services\Brand\BrandService;
-use ReversIO\Services\Orders\OrdersImporter;
+use ReversIO\Services\Orders\OrdersRequestBuilder;
 use ReversIO\Services\Orders\OrdersRetrieveService;
 use ReversIO\Services\Product\ProductService;
+use ReversIO\Services\Versions\Versions;
 
 class ReversIOApi
 {
     /** @var ProductService */
     private $productService;
 
-    /** @var OrdersImporter */
+    /** @var OrdersRequestBuilder */
     private $ordersImportService;
 
     /** @var OrderRepository */
@@ -85,9 +86,12 @@ class ReversIOApi
     /** @var ExportedProductsRepository */
     private $exportedProductsRepository;
 
+    /** @var Versions */
+    private $version;
+
     public function __construct(
         ProductService $productService,
-        OrdersImporter $ordersImportService,
+        OrdersRequestBuilder $ordersImportService,
         OrderRepository $orderRepository,
         LogsRepository $logsRepository,
         OrdersRetrieveService $ordersRetrieveService,
@@ -98,7 +102,8 @@ class ReversIOApi
         CategoryMapRepository $categoryMapRepository,
         CategoryRepository $categoryRepository,
         BrandService $brandService,
-        ExportedProductsRepository $exportedProductsRepository
+        ExportedProductsRepository $exportedProductsRepository,
+        Versions $version
     ) {
         $this->productService = $productService;
         $this->ordersImportService = $ordersImportService;
@@ -112,6 +117,7 @@ class ReversIOApi
         $this->categoryRepository = $categoryRepository;
         $this->brandService = $brandService;
         $this->exportedProductsRepository = $exportedProductsRepository;
+        $this->version = $version;
 
         $this->apiPublic = Configuration::get(Config::PUBLIC_KEY);
         $this->client = new \GuzzleHttp\Client();
@@ -197,8 +203,10 @@ class ReversIOApi
             $response->setSuccess(true);
             return $request;
         } catch (ServerException $exception) {
+            $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+
             $response->setSuccess(false);
-            $response->setMessage($exception->getResponse()->json()['errors'][0]['message']);
+            $response->setMessage($errorMessage);
             throw $exception;
         }
     }
@@ -217,6 +225,10 @@ class ReversIOApi
 
         if (!$brands->isSuccess()) {
             return $brands;
+        }
+
+        if (Configuration::get(Config::PRODUCT_INIT_EXPORT) === "1") {
+            $this->createNewBrand(Config::UNKNOWN_BRAND);
         }
 
         $brandObject = $brands->getContent();
@@ -274,14 +286,17 @@ class ReversIOApi
                 $response->setContent($request);
             } catch (\GuzzleHttp\Exception\ClientException $exception) {
                 if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
+                    $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+
                     $this->logger->insertProductLogs(
                         $productId,
                         $productBody['label'],
-                        $exception->getResponse()->json()['errors'][0]['message']
+                        $errorMessage
                     );
 
                     $response->setSuccess(false);
-                    $response->setMessage($exception->getResponse()->json()['errors'][0]['message']);
+                    //$exception->getResponse()->json()['errors'][0]['message']
+                    $response->setMessage($errorMessage);
                 }
             }
         }
@@ -307,7 +322,6 @@ class ReversIOApi
         foreach ($productsBody as $productBody) {
             $productId = $productBody['id_product'];
             $productIdFromAPI = $productBody['modelId'];
-            $productName = $productBody['name'];
 
             array_pop($productBody);
             array_pop($productBody);
@@ -334,14 +348,17 @@ class ReversIOApi
                 $response->setContent($request);
             } catch (ClientException $exception) {
                 if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
+                    $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+
                     $this->logger->insertProductLogs(
                         $productId,
-                        $productName,
-                        $exception->getResponse()->json()['errors'][0]['message']
+                        $productBody['label'],
+                        $errorMessage
                     );
 
                     $response->setSuccess(false);
-                    $response->setMessage($exception->getResponse()->json()['errors'][0]['message']);
+                    //$exception->getResponse()->json()['errors'][0]['message']
+                    $response->setMessage($errorMessage);
                 }
             }
         }
@@ -383,9 +400,11 @@ class ReversIOApi
                 $response->setContent($request);
             } catch (\GuzzleHttp\Exception\ClientException $exception) {
                 if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
+                    $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+
                     $this->logger->insertOrderLogs(
                         $orderBody['orderReference'],
-                        $exception->getResponse()->json()['errors'][0]['message']
+                        $errorMessage
                     );
 
                     $this->orderRepository->insertOrdersByState(
@@ -394,7 +413,7 @@ class ReversIOApi
                     );
 
                     $response->setSuccess(false);
-                    $response->setMessage($exception->getResponse()->json()['errors'][0]['message']);
+                    $response->setMessage($errorMessage);
                 }
             }
         }
@@ -428,8 +447,10 @@ class ReversIOApi
                 $response->setSuccess(true);
                 $ordersArray[] = $request->getContent();
             } catch (\GuzzleHttp\Exception\ClientException $exception) {
+                $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+
                 $response->setSuccess(false);
-                $response->setMessage($exception->getResponse()->json()['errors'][0]['message']);
+                $response->setMessage($errorMessage);
             }
         }
         $response->setContent($ordersArray);
@@ -470,8 +491,10 @@ class ReversIOApi
                 $response->setSuccess(true);
                 $response->setContent($request);
             } catch (\GuzzleHttp\Exception\ClientException $exception) {
+                $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+
                 $response->setSuccess(false);
-                $response->setMessage($exception->getResponse()->json()['errors'][0]['message']);
+                $response->setMessage($errorMessage);
             }
         }
         return $response;
@@ -505,8 +528,10 @@ class ReversIOApi
             $response->setSuccess(true);
             $response->setContent($request);
         } catch (\GuzzleHttp\Exception\ClientException $exception) {
+            $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+
             $response->setSuccess(false);
-            $response->setMessage($exception->getResponse()->json()['errors'][0]['message']);
+            $response->setMessage($errorMessage);
         }
 
         return $response;

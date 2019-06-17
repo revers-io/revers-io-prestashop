@@ -28,6 +28,8 @@
 
 namespace ReversIO\Services\Product;
 
+use Context;
+use ReversIO\Config\Config;
 use ReversIO\Services\CategoryMapService;
 
 class ProductService
@@ -55,6 +57,10 @@ class ProductService
 
             $brandName = $manufacture->name;
 
+            if ($brandName === null) {
+                $brandName = Config::UNKNOWN_BRAND;
+            }
+
             $brandId = null;
 
             foreach ($brandContent['value'] as $brand) {
@@ -71,6 +77,15 @@ class ProductService
                 $categoriesAndParentsIds
             );
 
+            $images = $product->getImages($language);
+
+            if(!empty($images)) {
+                $imageUrl = Context::getContext()->link->getImageLink(
+                    $product->link_rewrite[$language],
+                    $images[0]['id_image']
+                );
+            }
+
             $productsArray[] = [
                 "brandId" => $brandId,
                 "modelTypeId" => $categoryId,
@@ -84,7 +99,7 @@ class ProductService
                     "widthInCm" => (float)$product->width,
                     "heightInCm" => (float)$product->height,
                 ],
-                "photoUrl" => $product->getLink(),
+                "photoUrl" => $imageUrl,
                 "additionalInformation" => [
                     "isReturnable" => true,
                     "isRepairable" => true,

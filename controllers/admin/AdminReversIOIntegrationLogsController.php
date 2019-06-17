@@ -85,7 +85,7 @@ class AdminReversIOIntegrationLogsController extends ReversIOAbstractAdminContro
             ),
             'created_date' => array(
                 'title' => $this->l('Created date'),
-                'type' => 'date',
+                'type' => 'datetime',
                 'havingFilter' => true
             )
 

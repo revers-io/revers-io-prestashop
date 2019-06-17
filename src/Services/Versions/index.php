@@ -26,55 +26,12 @@
  * @see       /LICENSE
  */
 
-namespace ReversIO\Repository;
+header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
 
-use Db;
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
 
-class ProductRepository
-{
-    public function getProductReferenceById($productId)
-    {
-        $query = new \DbQuery();
-
-        $query->select('reference');
-        $query->from('product');
-        $query->where('id_product = ' . (int) $productId);
-
-        return Db::getInstance()->getValue($query);
-    }
-
-    public function getManufacturersNamesByProductIds(array $productIds)
-    {
-        $query = new \DbQuery();
-
-        $query->select('m. name');
-        $query->from('product', 'p');
-        $query->leftJoin(
-            'manufacturer',
-            'm',
-            'p.id_manufacturer = m.id_manufacturer'
-        );
-
-        $escapedProductIds = array_map(
-            function ($item) {
-                return (int) $item;
-            },
-            $productIds
-        );
-
-        $query->where('p. id_product IN (' . implode(',', $escapedProductIds) . ')');
-        $query->where('m. name IS NOT NULL');
-        $query->groupBy('m. name');
-
-        $db = Db::getInstance();
-
-        $resource = $db->query($query);
-        $result = array();
-
-        while ($row = $db->nextRow($resource)) {
-            $result[] = $row['name'];
-        }
-
-        return $result;
-    }
-}
+header('Location: ../');
+exit;

@@ -26,55 +26,12 @@
  * @see       /LICENSE
  */
 
-namespace ReversIO\Repository;
+namespace ReversIO\Services\Versions;
 
-use Db;
-
-class ProductRepository
+class Versions
 {
-    public function getProductReferenceById($productId)
+    public function isVersion173()
     {
-        $query = new \DbQuery();
-
-        $query->select('reference');
-        $query->from('product');
-        $query->where('id_product = ' . (int) $productId);
-
-        return Db::getInstance()->getValue($query);
-    }
-
-    public function getManufacturersNamesByProductIds(array $productIds)
-    {
-        $query = new \DbQuery();
-
-        $query->select('m. name');
-        $query->from('product', 'p');
-        $query->leftJoin(
-            'manufacturer',
-            'm',
-            'p.id_manufacturer = m.id_manufacturer'
-        );
-
-        $escapedProductIds = array_map(
-            function ($item) {
-                return (int) $item;
-            },
-            $productIds
-        );
-
-        $query->where('p. id_product IN (' . implode(',', $escapedProductIds) . ')');
-        $query->where('m. name IS NOT NULL');
-        $query->groupBy('m. name');
-
-        $db = Db::getInstance();
-
-        $resource = $db->query($query);
-        $result = array();
-
-        while ($row = $db->nextRow($resource)) {
-            $result[] = $row['name'];
-        }
-
-        return $result;
+        return (bool) version_compare(_PS_VERSION_, '1.7.4', '<');
     }
 }

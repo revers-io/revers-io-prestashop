@@ -28,10 +28,12 @@
 
 namespace ReversIO\Controller;
 
+use Collection;
 use Configuration;
 use ModuleAdminController;
 use ReversIO\Config\Config;
 use ReversIO\Services\Autentification\APIAuthentication;
+use ReversIO\Services\Versions\Versions;
 use ReversIOIntegration;
 use Tab;
 use Tools;
@@ -47,6 +49,8 @@ class ReversIOAbstractAdminController extends ModuleAdminController
      * @var ReversIOIntegration
      */
     public $module;
+
+    public $navigation = true;
 
     public function init()
     {
@@ -93,8 +97,10 @@ class ReversIOAbstractAdminController extends ModuleAdminController
     {
         $moduleTabs = $this->module->getTabs();
 
-        foreach ($moduleTabs as $moduleTab) {
+        /** @var Versions $version */
+        $version = $this->module->getContainer()->get('versions');
 
+        foreach ($moduleTabs as $moduleTab) {
             if ($moduleTab['class_name'] === Config::CONTROLLER_INVISIBLE
                 || $moduleTab['class_name'] === Config::CONTROLLER_EXPORT_LOGS) {
                 continue;
@@ -104,7 +110,7 @@ class ReversIOAbstractAdminController extends ModuleAdminController
                 $tabInstance = Tab::getInstanceFromClassName($moduleTab['class_name']);
                 $tabInstance->active = $tabStatus;
 
-                if($this->module->isVersion173()) {
+                if ($version->isVersion173()) {
                     $tabInstance->id_parent = $parent;
                 }
 

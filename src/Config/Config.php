@@ -102,4 +102,6 @@ class Config
     const CURRENCY_GBP = "GBP";
 
     const CHECK_ERROR_LOG = 2;
+
+    const UNKNOWN_BRAND = 'Unknown Brand';
 }

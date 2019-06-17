@@ -29,7 +29,7 @@
 <div id="formReversIoBlock" class="panel">
     <div class="panel-heading">
         <i class="icon-refresh"></i>
-        {l s="Revers.io" d='Admin.Global'}
+        {l s="Revers.io" mod='reversiointegration'}
     </div>
     <div>
         <div class="table-responsive">

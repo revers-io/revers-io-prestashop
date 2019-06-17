@@ -29,8 +29,8 @@
 namespace ReversIO\Services;
 
 use Category;
+use CategoryMap;
 use Configuration;
-use ReversIO\Entity\CategoryMap;
 use ReversIO\Repository\CategoryMapRepository;
 
 class CategoryMapService
@@ -85,7 +85,7 @@ class CategoryMapService
                 continue;
             }
 
-            if($postItemValue === '0') {
+            if ($postItemValue === '0') {
                 $this->categoryMapRepository->deleteCategory($categoryId);
 
                 continue;
