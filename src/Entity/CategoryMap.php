@@ -26,10 +26,6 @@
  * @see       /LICENSE
  */
 
-namespace ReversIO\Entity;
-
-use ObjectModel;
-
 class CategoryMap extends ObjectModel
 {
     public $id_category;

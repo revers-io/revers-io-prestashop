@@ -28,8 +28,11 @@
 
 namespace ReversIO\Install;
 
+use Language;
 use ReversIO\Services\Orders\OrderListBuilder;
+use ReversIO\Services\Versions\Versions;
 use ReversIOIntegration;
+use Tab;
 
 class Installer
 {
@@ -44,17 +47,22 @@ class Installer
     /** @var OrderListBuilder */
     private $ordersAdminPage;
 
+    /** @var Versions */
+    private $version;
+
     private $moduleConfiguration;
 
     public function __construct(
         ReversIOIntegration $module,
         DatabaseInstall $databaseInstall,
         OrderListBuilder $ordersAdminPage,
+        Versions $version,
         array $moduleConfiguration
     ) {
         $this->module = $module;
         $this->databaseInstall = $databaseInstall;
         $this->ordersAdminPage = $ordersAdminPage;
+        $this->version = $version;
         $this->moduleConfiguration = $moduleConfiguration;
     }
 

@@ -26,10 +26,6 @@
  * @see       /LICENSE
  */
 
-namespace ReversIO\Entity;
-
-use ObjectModel;
-
 class ProductForExport extends ObjectModel
 {
     public $id_product;

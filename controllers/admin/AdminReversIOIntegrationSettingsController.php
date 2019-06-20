@@ -132,7 +132,7 @@ class AdminReversIOIntegrationSettingsController extends ReversIOAbstractAdminCo
                     'class' => 'fixed-width-lg',
                     'cast' => 'intval',
                     'suffix' => 'days',
-                    'desc' => $this->l('Input 0 to store indefinitely'),
+                    'desc' => $this->l('Input 0 to not store logs'),
                 ),
                 'REVERSIODownload' => array(
                     'title' => '',
@@ -183,7 +183,6 @@ class AdminReversIOIntegrationSettingsController extends ReversIOAbstractAdminCo
         /** @var APIAuthentication $settingAuthentication */
         $settingAuthentication = $this->module->getContainer()->get('autentification');
 
-
         /** @var TabRepository $tab */
         $tab = $this->module->getContainer()->get('tabRepository');
 
@@ -200,7 +199,6 @@ class AdminReversIOIntegrationSettingsController extends ReversIOAbstractAdminCo
         if (Tools::isSubmit('submitReversIOAuthentication') &&
             (Tools::isSubmit(Config::PUBLIC_KEY) && Tools::isSubmit(Config::SECRET_KEY))
         ) {
-
             Configuration::updateValue(Config::TEST_MODE_SETTING, Tools::getValue(Config::TEST_MODE_SETTING));
             Configuration::updateValue(Config::PUBLIC_KEY, Tools::getValue(Config::PUBLIC_KEY));
             Configuration::updateValue(Config::SECRET_KEY, Tools::getValue(Config::SECRET_KEY));

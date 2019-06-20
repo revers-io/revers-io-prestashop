@@ -51,9 +51,20 @@ class AdminReversIOIntegrationCategoryMappingController extends ReversIOAbstract
 
     public function initContent()
     {
+        $this->displayCategoryMappingWarning();
+
         parent::initContent();
 
         $this->initCategoryMappingContent();
+    }
+
+    public function displayCategoryMappingWarning()
+    {
+        $this->informations['revCategoryMap'] =
+            $this->module->l(
+                'You should map as many as possible PrestaShop categories for better experience',
+                self::FILENAME
+            );
     }
 
     public function postProcess()
@@ -110,10 +121,10 @@ class AdminReversIOIntegrationCategoryMappingController extends ReversIOAbstract
 
         $this->context->smarty->assign($tplVars);
 
-        $this->context->smarty->assign(array(
-            'content' => $this->context->smarty->fetch(
-                $this->module->getLocalPath() . 'views/templates/admin/category-mapping-block.tpl'
-            ),
-        ));
+        $this->content .= $this->context->smarty->fetch(
+            $this->module->getLocalPath().'views/templates/admin/category-mapping-block.tpl'
+        );
+
+        $this->context->smarty->assign('content', $this->content);
     }
 }

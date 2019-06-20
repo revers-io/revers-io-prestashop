@@ -29,9 +29,10 @@
 namespace ReversIO\Services\Product;
 
 use Product;
-use ReversIO\Entity\ProductForExport;
+use ProductForExport;
 use ReversIO\Repository\ExportedProductsRepository;
 use ReversIO\Repository\ProductsForExportRepository;
+use ReversIO\Services\Versions\Versions;
 
 class ProductsForExportService
 {
@@ -39,12 +40,16 @@ class ProductsForExportService
 
     private $exportedProductsRepository;
 
+    private $version;
+
     public function __construct(
         ProductsForExportRepository $productsForExportRepository,
-        ExportedProductsRepository $exportedProductsRepository
+        ExportedProductsRepository $exportedProductsRepository,
+        Versions $version
     ) {
         $this->productsForExportRepository = $productsForExportRepository;
         $this->exportedProductsRepository = $exportedProductsRepository;
+        $this->version = $version;
     }
 
     /**

@@ -31,9 +31,21 @@ namespace ReversIO\Factory;
 use Configuration;
 use GuzzleHttp\Client;
 use ReversIO\Config\Config;
+use ReversIO\Services\Versions\Versions;
+use ReversIOIntegration;
 
 class ClientFactory
 {
+    /**
+     * @var Versions
+     */
+    private $version;
+
+    public function __construct(Versions $version)
+    {
+        $this->version = $version;
+    }
+
     public function getClient()
     {
         $apiUrlBase = Config::API_URL_BASE_LIVE;

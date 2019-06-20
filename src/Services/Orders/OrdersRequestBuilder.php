@@ -35,8 +35,7 @@ use ReversIO\Repository\OrderRepository;
 use ReversIO\Services\APIConnect\ReversIOApi;
 use ReversIOIntegration;
 
-//@todo : rename orderRequestBuilder maybe
-class OrdersImporter
+class OrdersRequestBuilder
 {
     /** @var OrderRepository */
     private $orderRepository;
@@ -69,16 +68,20 @@ class OrdersImporter
 
             $currency = new \Currency($orderObject->id_currency);
 
-            if ($currency->iso_code !== Config::CURRENCY_EUR && $currency->iso_code !== Config::CURRENCY_GBP) {
-                continue;
-            }
+//            if ($currency->iso_code !== Config::CURRENCY_EUR && $currency->iso_code !== Config::CURRENCY_GBP) {
+//                continue;
+//            }
 
             $customerObject = new \Customer($orderObject->id_customer);
             $addressObject = new \Address($orderObject->id_address_delivery);
 
             $country = new Country($addressObject->id_country);
 
-            $purchaseDateUtc = new \DateTime($orderObject->date_add, new \DateTimeZone('UTC'));
+            $dateTimeObject = new \DateTime($orderObject->date_add);
+
+            $dateTimeZone = new \DateTimeZone('UTC');
+
+            $purchaseDateUtc = $dateTimeObject->setTimezone($dateTimeZone);
 
             $array[] = [
                 'orderReference' => $orderObject->reference,

@@ -30,21 +30,13 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-use ReversIO\Config\Config;
-use Symfony\Component\Config\ConfigCache;
-use Symfony\Component\Config\FileLocator;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
-use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
-
 class ReversIOIntegration extends Module
 {
     private $moduleContainer;
 
     public function __construct()
     {
-        //@todo : add the translation
-        $this->name = 'reversiointegration';
+        $this->name = $this->l('reversiointegration');
         $this->version = '1.0.0';
         $this->tab = 'others';
         $this->author = 'Invertus';
@@ -52,8 +44,6 @@ class ReversIOIntegration extends Module
         $this->description = 'Revers.io integration';
 
         parent::__construct();
-
-//        $this->registerHook('moduleRoutes');
 
         $this->requireAutoloader();
         $this->compile();
@@ -81,7 +71,7 @@ class ReversIOIntegration extends Module
 
     public function getContent()
     {
-        Tools::redirectAdmin($this->context->link->getAdminLink(Config::CONTROLLER_CONFIGURATION));
+        Tools::redirectAdmin($this->context->link->getAdminLink(ReversIO\Config\Config::CONTROLLER_CONFIGURATION));
     }
 
     public function getContainer()
@@ -92,37 +82,41 @@ class ReversIOIntegration extends Module
     /**
      * Return array
      */
-    //@todo: for 1.6 version need to do the installTabs function
     public function getTabs()
     {
         return [
             [
+                'name' => 'Revers.io parent controller',
                 'ParentClassName' => 'AdminParentModulesSf',
-                'class_name' => Config::CONTROLLER_INVISIBLE,
+                'class_name' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
                 'visible' => false,
+                'parent' => -1,
             ],
             [
                 'name' => 'Category mapping',
-                'ParentClassName' => Config::CONTROLLER_INVISIBLE,
-                'class_name' => Config::CONTROLLER_CATEGORY_MAPPING,
+                'ParentClassName' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
+                'class_name' => ReversIO\Config\Config::CONTROLLER_CATEGORY_MAPPING,
                 'module_tab' => true,
+                'parent' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
             ],
             [
                 'name' => 'Logs',
-                'ParentClassName' => Config::CONTROLLER_INVISIBLE,
-                'class_name' => Config::CONTROLLER_LOGS,
+                'ParentClassName' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
+                'class_name' => ReversIO\Config\Config::CONTROLLER_LOGS,
                 'module_tab' => true,
+                'parent' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
             ],
             [
                 'name' => 'Settings',
-                'ParentClassName' => Config::CONTROLLER_INVISIBLE,
-                'class_name' => Config::CONTROLLER_CONFIGURATION,
+                'ParentClassName' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
+                'class_name' => ReversIO\Config\Config::CONTROLLER_CONFIGURATION,
                 'module_tab' => true,
+                'parent' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
             ],
             [
                 'name' => 'Export',
                 'ParentClassName' => -1,
-                'class_name' => Config::CONTROLLER_EXPORT_LOGS,
+                'class_name' => ReversIO\Config\Config::CONTROLLER_EXPORT_LOGS,
                 'module_tab' => true,
                 'visible' => false,
                 'parent' => -1
@@ -152,7 +146,7 @@ class ReversIOIntegration extends Module
         /** @var \ReversIO\Repository\ProductsForExportRepository $productsExport */
         $productsExport = $this->getContainer()->get('productExportRepository');
 
-        if (Configuration::get(Config::PRODUCT_INIT_EXPORT) === "1") {
+        if (Configuration::get(ReversIO\Config\Config::PRODUCT_INIT_EXPORT) === "1") {
             $products = Product::getProducts($this->context->language->id, 0, 0, 'id_product', 'ASC');
 
             $productIdsArray = $this->formatProducts($products);
@@ -160,7 +154,7 @@ class ReversIOIntegration extends Module
 //            TODO: why to create error catch logic if never use?
             $reversIOAPIConnect->putProducts($productIdsArray, $this->context->language->id);
 
-            Configuration::updateValue(Config::PRODUCT_INIT_EXPORT, 0);
+            Configuration::updateValue(ReversIO\Config\Config::PRODUCT_INIT_EXPORT, 0);
             return;
         }
 
@@ -174,9 +168,8 @@ class ReversIOIntegration extends Module
         if (!empty($productForUpdate)) {
             $reversIOAPIConnect->updateProducts($productForUpdate, $this->context->language->id);
         }
-//        return $reversIOAPIConnect->putDefaultProducts();
     }
-    //@todo: remove the orders status from the database and do the repository with hardcoded data for it
+
     public function hookActionAdminOrdersListingFieldsModifier($params)
     {
         /** @var \ReversIO\Services\Orders\OrderListBuilder $orderListBuilder */
@@ -206,10 +199,10 @@ class ReversIOIntegration extends Module
 
         $orderStatus = $orderRepository->getOrderStatus($orderId);
 
-        if ((int) $orderStatus === Config::CHECK_ERROR_LOG) {
+        if ((int) $orderStatus === ReversIO\Config\Config::CHECK_ERROR_LOG) {
             $this->context->smarty->assign(array(
                 'logCreated' => $logCreated,
-                'logLink' => $this->context->link->getAdminLink(Config::CONTROLLER_LOGS),
+                'logLink' => $this->context->link->getAdminLink(ReversIO\Config\Config::CONTROLLER_LOGS),
             ));
 
             return $this->display(__FILE__, 'views/templates/admin/hook/displayAdminOrder.tpl');
@@ -222,7 +215,7 @@ class ReversIOIntegration extends Module
         $orderRepository = $this->getContainer()->get('orderRepository');
         $reversIoLink = $orderRepository->getOrderUrlById($params['order']->id);
 
-        if($reversIoLink) {
+        if ($reversIoLink) {
             $this->context->smarty->assign(array(
                 'reversIoLink' => $reversIoLink,
             ));
@@ -270,11 +263,6 @@ class ReversIOIntegration extends Module
         }
     }
 
-    public function isVersion173()
-    {
-        return (bool) version_compare(_PS_VERSION_, '1.7.4', '<');
-    }
-
     /**
      * Require autoloader
      */
@@ -286,15 +274,21 @@ class ReversIOIntegration extends Module
     private function compile()
     {
         $containerCache = $this->getLocalPath() . 'var/cache/container.php';
-        $containerConfigCache = new ConfigCache($containerCache, Config::DISABLE_CACHE);
+        $containerConfigCache = new \Symfony\Component\Config\ConfigCache(
+            $containerCache,
+            ReversIO\Config\Config::DISABLE_CACHE
+        );
         $containerClass = get_class($this) . 'Container';
         if (!$containerConfigCache->isFresh()) {
-            $this->moduleContainer = new ContainerBuilder();
-            $locator = new FileLocator($this->getLocalPath().'config');
-            $loader  = new YamlFileLoader($this->moduleContainer, $locator);
+            $this->moduleContainer = new \Symfony\Component\DependencyInjection\ContainerBuilder();
+            $locator = new \Symfony\Component\Config\FileLocator($this->getLocalPath().'config');
+            $loader  = new \Symfony\Component\DependencyInjection\Loader\YamlFileLoader(
+                $this->moduleContainer,
+                $locator
+            );
             $loader->load('config.yml');
             $this->moduleContainer->compile();
-            $dumper = new PhpDumper($this->moduleContainer);
+            $dumper = new \Symfony\Component\DependencyInjection\Dumper\PhpDumper($this->moduleContainer);
             $containerConfigCache->write(
                 $dumper->dump(array('class' => $containerClass)),
                 $this->moduleContainer->getResources()
@@ -308,9 +302,6 @@ class ReversIOIntegration extends Module
     {
         $productIdsArray = [];
 
-        /**
-         * @todo if you only have one value then there is no point of two dimensional array. use one dimensional array like [1,2,3]
-         */
         foreach ($products as $product) {
             $productIdsArray[] = [
                 'id_product' => $product['id_product']

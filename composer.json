@@ -4,6 +4,7 @@
   "autoload": {
     "psr-4": {
       "ReversIO\\": "src/"
-    }
+    },
+    "classmap":  ["src/Entity/ProductForExport.php", "src/Entity/CategoryMap.php"]
   }
 }
