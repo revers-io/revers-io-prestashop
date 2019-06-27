@@ -3,7 +3,7 @@
 global $_MODULE;
 $_MODULE = array();
 $_MODULE['<{reversiointegration}prestashop>reversiointegration_2b2e7bf96358f07cae3e8fda6e9dd486'] = 'Revers.io integration';
-$_MODULE['<{reversiointegration}prestashop>reversiointegration_180b51584737f527dbfd83e7b4f925aa'] = 'Ar you sure you want to uninstall?';
+$_MODULE['<{reversiointegration}prestashop>reversiointegration_180b51584737f527dbfd83e7b4f925aa'] = 'Are you sure you want to uninstall?';
 $_MODULE['<{reversiointegration}prestashop>reversioabstractadmincontroller_15322cee97f65b1ff4854d91592de38f'] = 'Please note: module is in test mode';
 $_MODULE['<{reversiointegration}prestashop>adminreversiointegrationlogscontroller_a1fa27779242b4902f7ae3bdd5c6d508'] = 'Type';
 $_MODULE['<{reversiointegration}prestashop>adminreversiointegrationlogscontroller_a240fa27925a635b08dc28c9e4f9216d'] = 'Order';

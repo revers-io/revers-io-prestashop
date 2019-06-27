@@ -132,7 +132,7 @@ class AdminReversIOIntegrationSettingsController extends ReversIOAbstractAdminCo
                     'class' => 'fixed-width-lg',
                     'cast' => 'intval',
                     'suffix' => 'days',
-                    'desc' => $this->l('Input 0 to not store logs'),
+                    'desc' => $this->l('Input 0 to store indefinitely'),
                 ),
                 'REVERSIODownload' => array(
                     'title' => '',
@@ -150,8 +150,8 @@ class AdminReversIOIntegrationSettingsController extends ReversIOAbstractAdminCo
 
     protected function getCronSettingsFields()
     {
-        $pathForProducts = $this->module->getLocalPath() . 'reversiointegration.products.import.cron.php';
-        $pathForOrders = $this->module->getLocalPath() . 'reversiointegration.orders.import.cron.php';
+        $pathForProducts = ' '.$this->module->getLocalPath() . 'reversiointegration.products.import.cron.php';
+        $pathForOrders = ' '.$this->module->getLocalPath() . 'reversiointegration.orders.import.cron.php';
 
         return [
             'title' =>    $this->l('Cron jobs'),
