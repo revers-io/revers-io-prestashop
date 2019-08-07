@@ -43,15 +43,33 @@ class OrderRepository
         $this->colourGetter = $colourGetter;
     }
 
-    public function getOrders()
+    public function getOrdersForImport($importStatuses, $limit = false, $dateFrom, $dateTo)
     {
-        $sql = 'SELECT '._DB_PREFIX_.'orders.id_order as '._DB_PREFIX_.'order, 
-                '._DB_PREFIX_.'revers_io_imported_orders.id_order as revers_io_order 
+        $sql = 'SELECT '._DB_PREFIX_.'orders.`id_order` as `'._DB_PREFIX_.'order`
                 FROM '._DB_PREFIX_.'orders 
                 LEFT JOIN '._DB_PREFIX_.'revers_io_imported_orders ON 
-                            '._DB_PREFIX_.'revers_io_imported_orders.id_order = '._DB_PREFIX_.'orders.id_order';
+                            '._DB_PREFIX_.'revers_io_imported_orders.`id_order` = '._DB_PREFIX_.'orders.`id_order`
+                WHERE '._DB_PREFIX_.'orders.`current_state`
+                 IN ('.implode(',', array_map('intval', $importStatuses)).')
+                 AND '._DB_PREFIX_.'revers_io_imported_orders.`id_order` is NULL 
+                 AND DATE('._DB_PREFIX_.'orders.date_add) between "'.pSQL($dateFrom).'" AND "'.pSQL($dateTo).'"';
+
+        if ($limit) {
+            $sql .= ' LIMIT ' . (int) $limit;
+        }
 
         return Db::getInstance()->executeS($sql);
+    }
+
+    public function getOrderForImportById($orderId, $importStatuses)
+    {
+        $sql = 'SELECT '._DB_PREFIX_.'orders.id_order as `orderId`
+                FROM '._DB_PREFIX_.'orders 
+                WHERE '._DB_PREFIX_.'orders.id_order = ' . $orderId . '
+                AND '._DB_PREFIX_.'orders.`current_state`';
+//                 IN ('.implode(',', array_map('intval', $importStatuses)).')';
+
+        return Db::getInstance()->getValue($sql);
     }
 
     public function getOrderedProductId($orderId)
@@ -120,12 +138,19 @@ class OrderRepository
         return Db::getInstance()->getValue($query);
     }
 
-    public function insertSuccessfullyImportedOrder($orderReference)
+    public function insertSuccessfullyOrNotSuccessfullyImportedOrder($orderReference, $successful)
     {
         $orderId = $this->getOrderIdByReference($orderReference);
 
-        $sql = 'INSERT INTO '._DB_PREFIX_.'revers_io_imported_orders (id_order, reference)
-                            VALUES ("'. (int) $orderId.'", "'.pSQL($orderReference).'")';
+        $sql = 'INSERT INTO '._DB_PREFIX_.'revers_io_imported_orders (id_order, reference, successful)
+                            VALUES ("'. (int) $orderId.'", "'.pSQL($orderReference).'", '.(int) $successful.')';
+
+        return Db::getInstance()->execute($sql);
+    }
+
+    public function deleteUnsuccessfullyOrders()
+    {
+        $sql = 'DELETE FROM '._DB_PREFIX_.'revers_io_imported_orders WHERE successful = 0';
 
         return Db::getInstance()->execute($sql);
     }
@@ -182,6 +207,28 @@ class OrderRepository
         $query->select('id_order');
         $query->from('revers_io_orders');
         $query->where('id_order = '. (int) $orderId);
+
+        return Db::getInstance()->getValue($query);
+    }
+
+    public function getOrderStateByStateName($name)
+    {
+        $query = new \DbQuery();
+
+        $query->select('id_order_state');
+        $query->from('order_state_lang');
+        $query->where('name = "'.pSQL($name).'"');
+
+        return Db::getInstance()->getValue($query);
+    }
+
+    public function getOrderReferenceById($orderId)
+    {
+        $query = new \DbQuery();
+
+        $query->select('reference');
+        $query->from('orders');
+        $query->where('id_order = "' . (int) $orderId . '"');
 
         return Db::getInstance()->getValue($query);
     }

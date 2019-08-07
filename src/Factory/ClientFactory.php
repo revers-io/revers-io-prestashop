@@ -32,7 +32,7 @@ use Configuration;
 use GuzzleHttp\Client;
 use ReversIO\Config\Config;
 use ReversIO\Services\Versions\Versions;
-use ReversIOIntegration;
+use ReversIO;
 
 class ClientFactory
 {

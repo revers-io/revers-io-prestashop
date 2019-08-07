@@ -103,3 +103,12 @@ select.model-list-select {
     -o-transition: height 0.0001s ease !important;
     transition: height 0.0001s ease !important;
 }
+
+#configuration_form .category-map-container .chosen-container.chosen-container-single {
+    width: 100% !important;
+}
+
+.category-map-container.accordion>.category-map-part>.js-accordion-body.collapse {
+    height: auto;
+    display: block;
+}

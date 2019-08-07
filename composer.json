@@ -1,6 +1,6 @@
 {
-  "name": "invertus/reversiointegration",
-  "description": "Revers.io integration",
+  "name": "invertus/reversio",
+  "description": "Revers.io",
   "autoload": {
     "psr-4": {
       "ReversIO\\": "src/"

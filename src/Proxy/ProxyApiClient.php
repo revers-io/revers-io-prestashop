@@ -31,7 +31,9 @@ namespace ReversIO\Proxy;
 use Configuration;
 use GuzzleHttp\Exception\ClientException;
 use ReversIO\Config\Config;
+use ReversIO\Services\APIConnect\ApiHeadersBuilder;
 use ReversIO\Services\APIConnect\Token;
+use ReversIO\Services\Decoder\Decoder;
 
 class ProxyApiClient implements ApiClientInterface
 {
@@ -41,16 +43,20 @@ class ProxyApiClient implements ApiClientInterface
     /** @var ApiClientInterface */
     private $apiClient;
 
-    public function __construct(Token $token, ApiClientInterface $apiClient)
+    /** @var Decoder */
+    private $decoder;
+
+    public function __construct(Token $token, ApiClientInterface $apiClient, Decoder $decoder)
     {
         $this->token = $token;
         $this->apiClient = $apiClient;
+        $this->decoder = $decoder;
     }
 
     public function get($url, $headers)
     {
         $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
-        $apiSecretKey = Configuration::get(Config::SECRET_KEY);
+        $apiSecretKey =  $this->decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
 
         try {
             return $this->apiClient->get($url, $headers);
@@ -71,7 +77,7 @@ class ProxyApiClient implements ApiClientInterface
     public function post($url, $headers)
     {
         $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
-        $apiSecretKey = Configuration::get(Config::SECRET_KEY);
+        $apiSecretKey = $this->decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
 
         try {
             return $this->apiClient->post($url, $headers);
@@ -92,7 +98,7 @@ class ProxyApiClient implements ApiClientInterface
     public function put($url, $headers)
     {
         $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
-        $apiSecretKey = Configuration::get(Config::SECRET_KEY);
+        $apiSecretKey = $this->decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
 
         try {
             return $this->apiClient->put($url, $headers);

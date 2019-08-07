@@ -29,6 +29,8 @@
 namespace ReversIO\Services\Product;
 
 use Context;
+use Manufacturer;
+use Product;
 use ReversIO\Config\Config;
 use ReversIO\Services\CategoryMapService;
 
@@ -42,121 +44,91 @@ class ProductService
     }
 
     public function getInfoAboutProduct(
-        $brandContent,
-        $productsForInsert,
+        $brandId,
+        $productIdForInsert,
         $language,
         $allMappedCategories,
         $categoriesAndParentsIds
     ) {
-        $productsArray = [];
+        $product = new Product($productIdForInsert);
 
-        foreach ($productsForInsert as $productForInsert) {
-            $product = new \Product($productForInsert['id_product']);
+        $categoryId = $this->categoryMapService->getModelTypeByCategory(
+            (int) $product->id_category_default,
+            $allMappedCategories,
+            $categoriesAndParentsIds
+        );
 
-            $manufacture = new \Manufacturer($product->id_manufacturer);
+        $images = $product->getImages($language);
 
-            $brandName = $manufacture->name;
-
-            if ($brandName === null) {
-                $brandName = Config::UNKNOWN_BRAND;
-            }
-
-            $brandId = null;
-
-            foreach ($brandContent['value'] as $brand) {
-                if ($brand['name'] === $brandName) {
-                    $brandId = $brand['id'];
-
-                    break;
-                }
-            }
-
-            $categoryId = $this->categoryMapService->getModelTypeByCategory(
-                (int) $product->id_category_default,
-                $allMappedCategories,
-                $categoriesAndParentsIds
+        if(!empty($images)) {
+            $imageUrl = Context::getContext()->link->getImageLink(
+                $product->link_rewrite[$language],
+                $images[0]['id_image']
             );
-
-            $images = $product->getImages($language);
-
-            if(!empty($images)) {
-                $imageUrl = Context::getContext()->link->getImageLink(
-                    $product->link_rewrite[$language],
-                    $images[0]['id_image']
-                );
-            }
-
-            $productsArray[] = [
-                "brandId" => $brandId,
-                "modelTypeId" => $categoryId,
-                "sKU" => $product->reference,
-                "label" => $product->name[$language],
-                "eANs" => [
-                    $product->ean13,
-                ],
-                "dimension" => [
-                    "lengthInCm" => (float)$product->depth,
-                    "widthInCm" => (float)$product->width,
-                    "heightInCm" => (float)$product->height,
-                ],
-                "photoUrl" => $imageUrl,
-                "additionalInformation" => [
-                    "isReturnable" => true,
-                    "isRepairable" => true,
-                    "isTransportable" => true,
-                    "isSerializable" => true,
-                    "isOnSiteInterventionPossible" => true,
-                    "isCumbersome" => true
-                ],
-                "state" => 'new',
-                "weight" => (float)$product->weight,
-                "isLowValue" => true,
-                "id_product" => $product->id,
-            ];
         }
 
-        return $productsArray;
+        $productInfoArray = [
+            "brandId" => $brandId,
+            "modelTypeId" => $categoryId,
+            "sKU" => $product->reference,
+            "label" => $product->name[$language],
+            "eANs" => [
+                $product->ean13,
+            ],
+            "dimension" => [
+                "lengthInCm" => (float)$product->depth,
+                "widthInCm" => (float)$product->width,
+                "heightInCm" => (float)$product->height,
+            ],
+            "photoUrl" => $imageUrl,
+            "additionalInformation" => [
+                "isReturnable" => true,
+                "isRepairable" => true,
+                "isTransportable" => true,
+                "isSerializable" => true,
+                "isOnSiteInterventionPossible" => true,
+                "isCumbersome" => true
+            ],
+            "state" => 'new',
+            "weight" => (float)$product->weight,
+            "isLowValue" => true,
+            "id_product" => $product->id,
+        ];
+
+        return $productInfoArray;
     }
 
-    public function getInfoAboutProductForUpdate($modelsContent, $productsForUpdate, $language)
+    public function getInfoAboutProductForUpdate($productIdForUpdate, $modelId, $languageId)
     {
-        $productsArray = [];
+        $product = new Product($productIdForUpdate);
 
-        foreach ($productsForUpdate as $productForUpdate) {
-            $product = new \Product($productForUpdate['id_product']);
+        $productUpdateInfoArray = [
+            "sKU" => $product->reference,
+            "eANs" => [
+                $product->ean13,
+            ],
+            "dimension" => [
+                "lengthInCm" => (float)$product->depth,
+                "widthInCm" => (float)$product->width,
+                "heightInCm" => (float)$product->height,
+            ],
 
-            foreach ($modelsContent['value'] as $modelContent) {
-                if ($modelContent['name'] === $product->name[$language]) {
-                    $productsArray[] = [
-                        "sKU" => $product->reference,
-                        "eANs" => [
-                            $product->ean13,
-                        ],
-                        "dimension" => [
-                            "lengthInCm" => (float)$product->depth,
-                            "widthInCm" => (float)$product->width,
-                            "heightInCm" => (float)$product->height,
-                        ],
+            "photoUrl" => $product->getLink(),
+            "additionalInformation" => [
+                "isReturnable" => true,
+                "isRepairable" => true,
+                "isTransportable" => true,
+                "isSerializable" => true,
+                "isOnSiteInterventionPossible" => true,
+                "isCumbersome" => true
+            ],
+            "state" => 'new',
+            "weight" => (float)$product->weight,
+            "id_product" => $product->id,
+            "modelId" => $modelId,
+            'name' => $product->name[$languageId],
+        ];
 
-                        "photoUrl" => $product->getLink(),
-                        "additionalInformation" => [
-                            "isReturnable" => true,
-                            "isRepairable" => true,
-                            "isTransportable" => true,
-                            "isSerializable" => true,
-                            "isOnSiteInterventionPossible" => true,
-                            "isCumbersome" => true
-                        ],
-                        "state" => 'new',
-                        "weight" => (float)$product->weight,
-                        "id_product" => $product->id,
-                        "modelId" => $modelContent['id'],
-                        'name' => $product->name[$language],
-                    ];
-                }
-            }
-        }
-
-        return $productsArray;
+        return $productUpdateInfoArray;
     }
 }

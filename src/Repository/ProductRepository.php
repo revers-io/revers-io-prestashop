@@ -43,7 +43,7 @@ class ProductRepository
         return Db::getInstance()->getValue($query);
     }
 
-    public function getManufacturersNamesByProductIds(array $productIds)
+    public function getManufacturerNamesByProductId($productId)
     {
         $query = new \DbQuery();
 
@@ -55,26 +55,9 @@ class ProductRepository
             'p.id_manufacturer = m.id_manufacturer'
         );
 
-        $escapedProductIds = array_map(
-            function ($item) {
-                return (int) $item;
-            },
-            $productIds
-        );
-
-        $query->where('p. id_product IN (' . implode(',', $escapedProductIds) . ')');
+        $query->where('p. id_product = ' . (int) $productId);
         $query->where('m. name IS NOT NULL');
-        $query->groupBy('m. name');
 
-        $db = Db::getInstance();
-
-        $resource = $db->query($query);
-        $result = array();
-
-        while ($row = $db->nextRow($resource)) {
-            $result[] = $row['name'];
-        }
-
-        return $result;
+        return Db::getInstance()->getValue($query);
     }
 }

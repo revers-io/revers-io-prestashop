@@ -41,27 +41,31 @@ class Config
 
     const DISABLE_CACHE = false;
 
-    const CONTROLLER_INVISIBLE = 'AdminReversIOIntegrationTabs';
+    const CONTROLLER_INVISIBLE = 'AdminReversIOTabs';
 
     /**
      * Module settings page controller
      */
-    const CONTROLLER_CONFIGURATION = 'AdminReversIOIntegrationSettings';
+    const CONTROLLER_CONFIGURATION = 'AdminReversIOSettings';
 
     /**
      * Module info page controller
      */
-    const CONTROLLER_LOGS = 'AdminReversIOIntegrationLogs';
+    const CONTROLLER_LOGS = 'AdminReversIOLogs';
 
     /**
      * Module category mapping page controller
      */
-    const CONTROLLER_CATEGORY_MAPPING = 'AdminReversIOIntegrationCategoryMapping';
+    const CONTROLLER_CATEGORY_MAPPING = 'AdminReversIOCategoryMapping';
 
     /**
      * Logs export page controller
      */
-    const CONTROLLER_EXPORT_LOGS = 'AdminReversIOIntegrationExport';
+    const CONTROLLER_EXPORT_LOGS = 'AdminReversIOExport';
+
+    const CONTROLLER_ADMIN_AJAX = 'AdminReversIOAjax';
+
+    const FO_CONTROLLER = 'Ajax';
 
     const TEST_MODE_SETTING = 'REVERS_IO_TEST_MODE_SETTING';
 
@@ -71,6 +75,12 @@ class Config
 
     const ORDERS_STATUS = 'REVERS_IO_ORDER_STATUS';
 
+    const ORDER_DATE_FROM = 'REVERS_IO_ORDER_DATE_FROM';
+
+    const ORDER_DATE_TO = 'REVERS_IO_ORDER_DATE_TO';
+
+    const ORDERS_IMPORT_PROGRESS = 'REVERS_IO_ORDER_IMPORT_PROGRESS';
+
     const ENABLE_LOGGING_SETTING = 'REVERS_IO_ENABLE_LOGGING_SETTING';
 
     const STORE_LOGS = 'REVERS_IO_STORE_LOGS';
@@ -78,6 +88,8 @@ class Config
     const MAIN_SETTINGS_FIELDS_OPTION_NAME = 'home';
 
     const ORDER_SETTINGS_FIELDS_OPTION_NAME = 'ordersettings';
+
+    const ORDER_IMPORT_FIELDS_OPTION_NAME = 'orderimport';
 
     const LOGS_SETTINGS_FIELDS_OPTIONS_NAME = 'logs';
 
@@ -102,6 +114,8 @@ class Config
     const CURRENCY_GBP = "GBP";
 
     const CHECK_ERROR_LOG = 2;
+
+    const SUCCESSFULLY_IMPORTED = 1;
 
     const UNKNOWN_BRAND = 'Unknown Brand';
 }

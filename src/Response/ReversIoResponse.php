@@ -28,13 +28,31 @@
 
 namespace ReversIO\Response;
 
-class ReversIoResponse
+class ReversIoResponse implements \JsonSerializable
 {
     private $success;
 
     private $message;
 
     private $content;
+
+    private $redirectUrl = '';
+
+    /**
+     * @return string
+     */
+    public function getRedirectUrl()
+    {
+        return $this->redirectUrl;
+    }
+
+    /**
+     * @param string $redirectUrl
+     */
+    public function setRedirectUrl($redirectUrl)
+    {
+        $this->redirectUrl = $redirectUrl;
+    }
 
     public function isSuccess()
     {
@@ -64,5 +82,21 @@ class ReversIoResponse
     public function getContent()
     {
         return $this->content;
+    }
+
+    /**
+     * Specify data which should be serialized to JSON
+     * @link https://php.net/manual/en/jsonserializable.jsonserialize.php
+     * @return mixed data which can be serialized by <b>json_encode</b>,
+     * which is a value of any type other than a resource.
+     * @since 5.4.0
+     */
+    public function jsonSerialize()
+    {
+        return [
+            'success' => $this->isSuccess(),
+            'message' => $this->getMessage(),
+            'url' => $this->getRedirectUrl(),
+        ];
     }
 }

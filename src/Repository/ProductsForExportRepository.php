@@ -60,6 +60,16 @@ class ProductsForExportRepository
         return Db::getInstance()->executeS($sql);
     }
 
+    public function getProductForUpdateById($idProduct)
+    {
+        $sql = 'SELECT id 
+                  FROM '._DB_PREFIX_.'revers_io_products_for_export 
+                  WHERE id_product = ' . (int) $idProduct . ' 
+                  AND ' . _DB_PREFIX_ . 'revers_io_products_for_export.update = 1';
+
+        return Db::getInstance()->getValue($sql);
+    }
+
     public function getProductsForInsert()
     {
         $sql = 'SELECT id_product 

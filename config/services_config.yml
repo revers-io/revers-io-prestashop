@@ -1,14 +1,14 @@
 services:
-  reversiointegration.module:
-    class: 'ReversIOIntegration'
+  reversio.module:
+    class: 'ReversIO'
     factory: ['Module', 'getInstanceByName']
     arguments:
-      - 'reversiointegration'
+      - 'reversio'
 
   installer:
     class: 'ReversIO\Install\Installer'
     arguments:
-      - '@reversiointegration.module'
+      - '@reversio.module'
       - '@databaseInstall'
       - '@ordersAdmin'
       - '@versions'
@@ -17,7 +17,7 @@ services:
   uninstaller:
     class: 'ReversIO\Uninstall\Uninstaller'
     arguments:
-      - '@reversiointegration.module'
+      - '@reversio.module'
       - '@databaseInstall'
       - '@versions'
 
@@ -26,6 +26,9 @@ services:
     arguments:
       - '@colourGetter'
       - '@nameGetter'
+
+  arrayAdapter:
+    class: 'ReversIO\Adapter\ArrayAdapter'
 
   productImporter:
     class: 'ReversIO\Services\Product\ProductService'
@@ -36,7 +39,9 @@ services:
     class: 'ReversIO\Services\Orders\OrdersRequestBuilder'
     arguments:
       - '@orderRepository'
-      - '@reversiointegration.module'
+      - '@reversio.module'
+      - '@modelService'
+      - '@loggerService'
 
   orderRepository:
     class: 'ReversIO\Repository\OrderRepository'
@@ -52,17 +57,20 @@ services:
   categoryRepository:
     class: 'ReversIO\Repository\CategoryRepository'
 
+  brandRepository:
+    class: 'ReversIO\Repository\BrandRepository'
+
   loggerService:
     class: 'ReversIO\Repository\Logs\Logger'
     arguments:
       - '@orderRepository'
       - '@productRepository'
+      - '@brandRepository'
 
   reversIoApiConnect:
     class: 'ReversIO\Services\APIConnect\ReversIOApi'
     arguments:
       - '@productImporter'
-      - '@ordersImport'
       - '@orderRepository'
       - '@logsRepository'
       - '@ordersRetrieveService'
@@ -75,12 +83,22 @@ services:
       - '@brandService'
       - '@exportedProductsRepository'
       - '@versions'
+      - '@productRepository'
+      - '@apiHeadersBuilder'
+      - '@reversIoCache'
+
+  orderImportService:
+    class: 'ReversIO\Services\Orders\OrderImportService'
+    arguments:
+      - '@ordersImport'
+      - '@reversIoApiConnect'
+      - '@orderRepository'
 
   ordersRetrieveService:
     class: 'ReversIO\Services\Orders\OrdersRetrieveService'
     arguments:
-      - '@reversiointegration.module'
-      -
+      - '@reversio.module'
+
   productForExportService:
     class: 'ReversIO\Services\Product\ProductsForExportService'
     arguments:
@@ -96,7 +114,17 @@ services:
   brandService:
     class: 'ReversIO\Services\Brand\BrandService'
     arguments:
-      - '@productRepository'
+      - '@reversio.module'
+      - '@arrayAdapter'
+
+  modelService:
+    class: 'ReversIO\Services\Product\ModelService'
+    arguments:
+      - '@reversio.module'
+      - '@orderRepository'
+      - '@productExportRepository'
+      - '@reversIoApiConnect'
+      - '@reversIoCache'
 
   ordersAdmin:
     class: 'ReversIO\Services\Orders\OrderListBuilder'
@@ -140,12 +168,15 @@ services:
 
   token:
     class: 'ReversIO\Services\APIConnect\Token'
+    arguments:
+      - '@reversio_decoder'
 
   proxyApiClient:
     class: 'ReversIO\Proxy\ProxyApiClient'
     arguments:
       - '@token'
       - '@apiClient'
+      - '@reversio_decoder'
 
   ordersListingRepository:
     class: 'ReversIO\Repository\OrdersListingRepository'
@@ -158,3 +189,22 @@ services:
 
   versions:
     class: 'ReversIO\Services\Versions\Versions'
+
+  orderStatuses:
+    class: 'ReversIO\Services\Orders\OrderStatus'
+
+  reversio_decoder:
+    class: 'ReversIO\Services\Decoder\Decoder'
+
+  reversioMultiSelect:
+    class: 'ReversIO\MultiSelect\MultiSelect'
+
+  apiHeadersBuilder:
+    class: 'ReversIO\Services\APIConnect\ApiHeadersBuilder'
+    arguments:
+      - '@token'
+
+  reversIoCache:
+    class: 'ReversIO\Services\Cache\Cache'
+    arguments:
+      - '@reversio.module'

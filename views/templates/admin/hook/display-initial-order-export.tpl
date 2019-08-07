@@ -25,11 +25,24 @@
 * @see       /LICENSE
 *}
 
-<section id="reversio" class="box">
-    <h4>{l s='Revers.io' mod='reversiointegration'}</h4>
-
-    <footer class="form-footer text-sm-left">
-        <input type="hidden" name="id_order" value="15">
-        <a href="{$reversIoLink}" class="btn btn-primary form-control-submit">{l s='Check status on Revers.io' mod='reversiointegration'}</a>
-    </footer>
-</section>
+<!-- Revers.io block -->
+<div id="formReversIoBlock" class="panel">
+    <div class="panel-heading">
+        <i class="icon-refresh"></i>
+        {l s="Revers.io" mod='reversio'}
+    </div>
+    <div>
+        <div class="table-responsive">
+            <table class="table reversio row-margin-bottom">
+                <tbody>
+                <tr>
+                    <button type="submit" id="submitInitialOrderImport" class="btn btn-primary js-revers-io-order-import-button" name="submitInitialOrderImport">
+                        {l s='Export order' mod='reversio'}
+                    </button>
+                    <input class="hidden revers-io-order-id" value="{$orderId}">
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

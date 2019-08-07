@@ -39,10 +39,11 @@ use ReversIO\Repository\ExportedProductsRepository;
 use ReversIO\Repository\Logs\Logger;
 use ReversIO\Repository\Logs\LogsRepository;
 use ReversIO\Repository\OrderRepository;
+use ReversIO\Repository\ProductRepository;
 use ReversIO\Repository\ProductsForExportRepository;
 use ReversIO\Response\ReversIoResponse;
 use ReversIO\Services\Brand\BrandService;
-use ReversIO\Services\Orders\OrdersRequestBuilder;
+use ReversIO\Services\Cache\Cache;
 use ReversIO\Services\Orders\OrdersRetrieveService;
 use ReversIO\Services\Product\ProductService;
 use ReversIO\Services\Versions\Versions;
@@ -51,9 +52,6 @@ class ReversIOApi
 {
     /** @var ProductService */
     private $productService;
-
-    /** @var OrdersRequestBuilder */
-    private $ordersImportService;
 
     /** @var OrderRepository */
     private $orderRepository;
@@ -89,9 +87,19 @@ class ReversIOApi
     /** @var Versions */
     private $version;
 
+    /** @var ProductRepository */
+    private $productRepository;
+
+    /** @var ApiHeadersBuilder */
+    private $apiHeadersBuilder;
+
+    /** @var Cache */
+    private $cache;
+
+    private $listBrands = null;
+
     public function __construct(
         ProductService $productService,
-        OrdersRequestBuilder $ordersImportService,
         OrderRepository $orderRepository,
         LogsRepository $logsRepository,
         OrdersRetrieveService $ordersRetrieveService,
@@ -103,10 +111,12 @@ class ReversIOApi
         CategoryRepository $categoryRepository,
         BrandService $brandService,
         ExportedProductsRepository $exportedProductsRepository,
-        Versions $version
+        Versions $version,
+        ProductRepository $productRepository,
+        ApiHeadersBuilder $apiHeadersBuilder,
+        Cache $cache
     ) {
         $this->productService = $productService;
-        $this->ordersImportService = $ordersImportService;
         $this->orderRepository = $orderRepository;
         $this->logsRepository = $logsRepository;
         $this->ordersRetrieveService = $ordersRetrieveService;
@@ -118,11 +128,14 @@ class ReversIOApi
         $this->brandService = $brandService;
         $this->exportedProductsRepository = $exportedProductsRepository;
         $this->version = $version;
+        $this->productRepository = $productRepository;
 
         $this->apiPublic = Configuration::get(Config::PUBLIC_KEY);
         $this->client = new \GuzzleHttp\Client();
 
         $this->productsExportRepository = $productsExportRepository;
+        $this->apiHeadersBuilder = $apiHeadersBuilder;
+        $this->cache = $cache;
     }
 
 
@@ -137,11 +150,7 @@ class ReversIOApi
         try {
             $url = 'catalog/modelTypes';
             $headers = [
-                'headers' => [
-                    'Accept-Language' => $langIsoCode,
-                    'Authorization' => 'Bearer '.$this->token->getToken()->getContent()['value'],
-                    'Ocp-Apim-Subscription-Key' => $this->apiPublic,
-                ]
+                'headers' => $this->apiHeadersBuilder->buildHeadersForGetWithLanguage($langIsoCode),
             ];
 
             $request = $this->proxyApiClient->get($url, $headers);
@@ -165,10 +174,7 @@ class ReversIOApi
         try {
             $url = 'catalog/brands';
             $headers = [
-                'headers' => [
-                    'Authorization' => 'Bearer '.$this->token->getToken()->getContent()['value'],
-                    'Ocp-Apim-Subscription-Key' => $this->apiPublic,
-                ]
+                'headers' => $this->apiHeadersBuilder->buildHeadersForGet(),
             ];
 
             $request = $this->proxyApiClient->get($url, $headers);
@@ -192,22 +198,22 @@ class ReversIOApi
         try {
             $url = 'catalog/models';
             $headers = [
-                'headers' => [
-                    'Authorization' => 'Bearer '.$this->token->getToken()->getContent()['value'],
-                    'Ocp-Apim-Subscription-Key' => $this->apiPublic,
-                ]
+                'headers' => $this->apiHeadersBuilder->buildHeadersForGet(),
             ];
 
+            //@todo: set the request to the response content
             $request = $this->proxyApiClient->get($url, $headers);
 
             $response->setSuccess(true);
+            //@todo : check why the request is return not the response
             return $request;
         } catch (ServerException $exception) {
             $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
 
             $response->setSuccess(false);
             $response->setMessage($errorMessage);
-            throw $exception;
+
+            return $response;
         }
     }
 
@@ -215,90 +221,87 @@ class ReversIOApi
      * This function is putting the products into the Revers.io
      * https://demo-api-portal.revers.io/docs/services/revers/operations/CreateNewModel?
      */
-    public function putProducts($productForInsert, $languageId)
+    public function putProduct($productIdForInsert, $languageId)
     {
+        if (Configuration::get(Config::PRODUCT_INIT_EXPORT) === "1") {
+            $this->createNewBrand(Config::UNKNOWN_BRAND);
+
+            Configuration::updateValue(Config::PRODUCT_INIT_EXPORT, 0);
+        }
+
         $response = new ReversIoResponse();
 
         $rootCategory = Configuration::get('PS_ROOT_CATEGORY');
 
-        $brands = $this->getListBrands();
+        $brands = $this->cache->getBrands();
 
         if (!$brands->isSuccess()) {
             return $brands;
         }
 
-        if (Configuration::get(Config::PRODUCT_INIT_EXPORT) === "1") {
-            $this->createNewBrand(Config::UNKNOWN_BRAND);
-        }
-
         $brandObject = $brands->getContent();
 
-        $unknownBrands = $this->brandService->getUnknownBrandsByProductIds($productForInsert, $brandObject['value']);
-// TODO: need better solution for this
-        if (!empty($unknownBrands)) {
-            foreach ($unknownBrands as $unknownBrand) {
-                $this->createNewBrand($unknownBrand);
+        $manufacturer = $this->productRepository->getManufacturerNamesByProductId($productIdForInsert);
+        $brandId = $this->brandService->getBrandIdByManufacturer($manufacturer, $brandObject['value']);
+
+        if (!$brandId) {
+            $createBrandResponse = $this->createNewBrand($manufacturer);
+
+            if (!$createBrandResponse->isSuccess()) {
+                return $createBrandResponse;
             }
 
-            $brands = $this->getListBrands();
+            $brandId = $createBrandResponse->getContent()['value']['id'];
 
-            if (!$brands->isSuccess()) {
-                return $brands;
-            }
-
-            $brandObject = $brands->getContent();
+            $this->cache->updateBrandsList();
         }
 
         $allMappedCategories = $this->categoryMapRepository->getAllMappedCategories();
         $categoriesAndParentsIds = $this->categoryRepository->getAllCategoryAndParentIds($rootCategory);
 
-        $productsBody = $this->productService->getInfoAboutProduct(
-            $brandObject,
-            $productForInsert,
+        $productBody = $this->productService->getInfoAboutProduct(
+            $brandId,
+            $productIdForInsert,
             $languageId,
             $allMappedCategories,
             $categoriesAndParentsIds
         );
 
-        foreach ($productsBody as $productBody) {
-            $productId = $productBody['id_product'];
+        $productId = $productBody['id_product'];
 
-            array_pop($productBody);
+        //@todo change array_pop to unset by id_product
+        array_pop($productBody);
 
-            try {
-                $url = 'catalog/models';
-                $requestHeadersAndBody = [
-                    'headers' => [
-                        'Authorization' => 'Bearer '.$this->token->getToken()->getContent()['value'],
-                        'Content-Type' => 'application/json',
-                        'Ocp-Apim-Subscription-Key' => $this->apiPublic,
-                    ],
-                    'body' => json_encode($productBody),
+        try {
+            $url = 'catalog/models';
+            $requestHeadersAndBody = [
+                'headers' => $this->apiHeadersBuilder->buildHeadersForPutAndPost(),
+                'body' => json_encode($productBody),
+            ];
+
+            $request = $this->proxyApiClient->put($url, $requestHeadersAndBody);
+
+            $this->exportedProductsRepository->insertExportedProducts($productId);
+
+            $this->productsExportRepository->deleteFromProductsForExport($productId);
+
+            $response->setSuccess(true);
+            $response->setContent($request->getContent()['value']['id']);
+        } catch (\GuzzleHttp\Exception\ClientException $exception) {
+            $errorMessage =
+                [
+                    'productReference' => $productBody['sKU'],
+                    'message' => $exception->getResponse()->json()['errors'][0]['message']
                 ];
-
-                $request = $this->proxyApiClient->put($url, $requestHeadersAndBody);
-
-                $this->exportedProductsRepository->insertExportedProducts($productId);
-
-                $this->productsExportRepository->deleteFromProductsForExport($productId);
-
-                $response->setSuccess(true);
-                $response->setContent($request);
-            } catch (\GuzzleHttp\Exception\ClientException $exception) {
-                if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
-                    $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
-
-                    $this->logger->insertProductLogs(
-                        $productId,
-                        $productBody['label'],
-                        $errorMessage
-                    );
-
-                    $response->setSuccess(false);
-                    //$exception->getResponse()->json()['errors'][0]['message']
-                    $response->setMessage($errorMessage);
-                }
+            if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
+                $this->logger->insertProductLogs(
+                    $productId,
+                    $productBody['label'],
+                    $errorMessage['message']
+                );
             }
+            $response->setSuccess(false);
+            $response->setMessage($errorMessage);
         }
 
         return $response;
@@ -308,115 +311,102 @@ class ReversIOApi
      * This function is updating the products in Revers.io
      * https://demo-api-portal.revers.io/docs/services/revers/operations/UpdateModel?
      */
-    public function updateProducts($productForUpdate, $languageId)
+    public function updateProduct($productIdForUpdate, $modelId, $languageId)
     {
         $response = new ReversIoResponse();
 
-        $models = $this->getListModels();
+        $productBody = $this->productService->getInfoAboutProductForUpdate(
+            $productIdForUpdate,
+            $modelId,
+            $languageId
+        );
 
-        $modelsObject = $models->getContent();
+        $productId = $productBody['id_product'];
+        $productIdFromAPI = $productBody['modelId'];
 
-        $productsBody =
-            $this->productService->getInfoAboutProductForUpdate($modelsObject, $productForUpdate, $languageId);
+        //@todo: change the array_pop to something like unset or smth
+        array_pop($productBody);
+        array_pop($productBody);
+        array_pop($productBody);
 
-        foreach ($productsBody as $productBody) {
-            $productId = $productBody['id_product'];
-            $productIdFromAPI = $productBody['modelId'];
+        try {
+            $url = 'catalog/models/'.$productIdFromAPI;
+            $requestHeadersAndBody = [
+                'headers' => $this->apiHeadersBuilder->buildHeadersForPutAndPost(),
+                'body' => json_encode($productBody),
+            ];
 
-            array_pop($productBody);
-            array_pop($productBody);
-            array_pop($productBody);
+            $request = $this->proxyApiClient->post($url, $requestHeadersAndBody);
 
-            try {
-                $url = 'catalog/models/'.$productIdFromAPI;
-                $requestHeadersAndBody = [
-                    'headers' => [
-                        'Authorization' => 'Bearer '.$this->token->getToken()->getContent()['value'],
-                        'Content-Type' => 'application/json',
-                        'Ocp-Apim-Subscription-Key' => $this->apiPublic,
-                    ],
-                    'body' => json_encode($productBody),
-                ];
+            $this->exportedProductsRepository->updateExportedProduct($productId);
 
-                $request = $this->proxyApiClient->post($url, $requestHeadersAndBody);
+            $this->productsExportRepository->deleteFromProductsForExport($productId);
 
-                $this->exportedProductsRepository->updateExportedProduct($productId);
-
-                $this->productsExportRepository->deleteFromProductsForExport($productId);
-
-                $response->setSuccess(true);
-                $response->setContent($request);
-            } catch (ClientException $exception) {
-                if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
-                    $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
-
-                    $this->logger->insertProductLogs(
-                        $productId,
-                        $productBody['label'],
-                        $errorMessage
-                    );
-
-                    $response->setSuccess(false);
-                    //$exception->getResponse()->json()['errors'][0]['message']
-                    $response->setMessage($errorMessage);
-                }
+            $response->setSuccess(true);
+            $response->setContent($request->getContent()['value']['id']);
+        } catch (ClientException $exception) {
+            $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+            if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
+                $this->logger->insertProductLogs(
+                    $productId,
+                    $productBody['label'],
+                    $errorMessage
+                );
             }
+            $response->setSuccess(false);
+            $response->setMessage($errorMessage);
         }
+
         return $response;
     }
 
-    /**
-     * This function is importing the orders into the Revers.io
-     * https://demo-api-portal.revers.io/docs/services/revers/operations/ImportOrder?
-     */
-    public function importOrders()
+    public function importOrderRequest($orderBody)
     {
         $response = new ReversIoResponse();
 
-        $ordersBody = $this->ordersImportService->getOrdersInformationForImport();
+        try {
+            $url = 'orders';
+            $requestHeadersAndBody = [
+                'headers' => $this->apiHeadersBuilder->buildHeadersForPutAndPost(),
+                'body' => json_encode($orderBody),
+            ];
 
-        foreach ($ordersBody as $orderBody) {
-            try {
-                $url = 'orders';
-                $requestHeadersAndBody = [
-                    'headers' => [
-                        'Authorization' => 'Bearer '.$this->token->getToken()->getContent()['value'],
-                        'Content-Type' => 'application/json',
-                        'Ocp-Apim-Subscription-Key' => $this->apiPublic,
-                    ],
-                    'body' => json_encode($orderBody),
-                ];
+            $request = $this->proxyApiClient->put($url, $requestHeadersAndBody);
 
-                $request = $this->proxyApiClient->put($url, $requestHeadersAndBody);
+            $this->orderRepository->insertSuccessfullyOrNotSuccessfullyImportedOrder(
+                $orderBody['orderReference'],
+                1
+            );
 
-                $this->orderRepository->insertSuccessfullyImportedOrder($orderBody['orderReference']);
+            $this->orderRepository->insertOrdersByState(
+                $orderBody['orderReference'],
+                Config::SYNCHRONIZED_SUCCESSFULLY_ORDERS_STATUS
+            );
+
+            $response->setSuccess(true);
+            $response->setContent($request);
+        } catch (\GuzzleHttp\Exception\ClientException $exception) {
+            $this->orderRepository->insertSuccessfullyOrNotSuccessfullyImportedOrder(
+                $orderBody['orderReference'],
+                0
+            );
+            $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+            if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
+
+                $this->logger->insertOrderLogs(
+                    $orderBody['orderReference'],
+                    $errorMessage
+                );
 
                 $this->orderRepository->insertOrdersByState(
                     $orderBody['orderReference'],
-                    Config::SYNCHRONIZED_SUCCESSFULLY_ORDERS_STATUS
+                    Config::SYNCHRONIZED_UNSUCCESSFULLY_ORDERS_STATUS
                 );
-
-                $response->setSuccess(true);
-                $response->setContent($request);
-            } catch (\GuzzleHttp\Exception\ClientException $exception) {
-                if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
-                    $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
-
-                    $this->logger->insertOrderLogs(
-                        $orderBody['orderReference'],
-                        $errorMessage
-                    );
-
-                    $this->orderRepository->insertOrdersByState(
-                        $orderBody['orderReference'],
-                        Config::SYNCHRONIZED_UNSUCCESSFULLY_ORDERS_STATUS
-                    );
-
-                    $response->setSuccess(false);
-                    $response->setMessage($errorMessage);
-                }
             }
+            $response->setSuccess(false);
+            $response->setMessage($errorMessage);
         }
+
         return $response;
     }
 
@@ -424,7 +414,8 @@ class ReversIOApi
      * This function is retrieving the orders from the Revers.io
      * https://demo-api-portal.revers.io/docs/services/revers/operations/RetrieveOrder?
      */
-    public function retrieveOrder()
+    //@todo: check NAMING ir geriau injectinti pvz ordersReference
+    public function retrieveOrders()
     {
         $response = new ReversIoResponse();
 
@@ -436,10 +427,7 @@ class ReversIOApi
             try {
                 $url = 'orders/'.$orderReference['reference'].'/status';
                 $headers = [
-                    'headers' => [
-                        'Authorization' => 'Bearer '.$this->token->getToken()->getContent()['value'],
-                        'Ocp-Apim-Subscription-Key' => $this->apiPublic,
-                    ]
+                    'headers' => $this->apiHeadersBuilder->buildHeadersForGet(),
                 ];
 
                 $request = $this->proxyApiClient->get($url, $headers);
@@ -457,27 +445,46 @@ class ReversIOApi
         return $response;
     }
 
+    public function retrieveOrder($orderReference)
+    {
+        $response = new ReversIoResponse();
+
+        try {
+            $url = 'orders/'.$orderReference.'/status';
+            $headers = [
+                'headers' => $this->apiHeadersBuilder->buildHeadersForGet(),
+            ];
+
+            $request = $this->proxyApiClient->get($url, $headers);
+
+            $response->setSuccess(true);
+            $response->setContent($request->getContent());
+        } catch (\GuzzleHttp\Exception\ClientException $exception) {
+            $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+
+            $response->setSuccess(false);
+            $response->setMessage($errorMessage);
+        }
+        return $response;
+    }
+
     /**
      * This function is retrieving the orders url generated by Revers.io
      * https://demo-api-portal.revers.io/docs/services/revers/operations/CreateSigned-inLink?
      */
-    public function retrieveOrderUrl()
+    public function retrieveOrderUrl($orderId)
     {
         $response = new ReversIoResponse();
 
-        $retrievedOrders = $this->ordersRetrieveService->getRetrievedOrders();
+        $retrievedOrder = $this->ordersRetrieveService->getRetrievedOrder($orderId);
 
-        foreach ($retrievedOrders as $retrievedOrder) {
+//        foreach ($retrievedOrders as $retrievedOrder) {
             $body = ['orderId' => $retrievedOrder['orderId']];
 
             try {
                 $url = 'links';
                 $requestHeadersAndBody = [
-                    'headers' => [
-                        'Authorization' => 'Bearer '.$this->token->getToken()->getContent()['value'],
-                        'Content-Type' => 'application/json',
-                        'Ocp-Apim-Subscription-Key' => $this->apiPublic,
-                    ],
+                    'headers' => $this->apiHeadersBuilder->buildHeadersForPutAndPost(),
                     'body' => json_encode($body),
                 ];
 
@@ -496,7 +503,7 @@ class ReversIOApi
                 $response->setSuccess(false);
                 $response->setMessage($errorMessage);
             }
-        }
+//        }
         return $response;
     }
 
@@ -515,11 +522,7 @@ class ReversIOApi
         try {
             $url = 'catalog/brands';
             $requestHeadersAndBody = [
-                'headers' => [
-                    'Authorization' => 'Bearer '.$this->token->getToken()->getContent()['value'],
-                    'Content-Type' => 'application/json',
-                    'Ocp-Apim-Subscription-Key' => $this->apiPublic,
-                ],
+                'headers' => $this->apiHeadersBuilder->buildHeadersForPutAndPost(),
                 'body' => json_encode($brandBody),
             ];
 
@@ -529,6 +532,11 @@ class ReversIOApi
             $response->setContent($request);
         } catch (\GuzzleHttp\Exception\ClientException $exception) {
             $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+
+            $this->logger->insertBrandLogs(
+                $brandName,
+                $errorMessage
+            );
 
             $response->setSuccess(false);
             $response->setMessage($errorMessage);

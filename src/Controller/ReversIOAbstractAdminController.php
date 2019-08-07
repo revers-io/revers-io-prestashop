@@ -34,7 +34,7 @@ use ModuleAdminController;
 use ReversIO\Config\Config;
 use ReversIO\Services\Autentification\APIAuthentication;
 use ReversIO\Services\Versions\Versions;
-use ReversIOIntegration;
+use ReversIO;
 use Tab;
 use Tools;
 
@@ -46,7 +46,7 @@ class ReversIOAbstractAdminController extends ModuleAdminController
     const FILENAME = 'ReversIOAbstractAdminController';
 
     /**
-     * @var ReversIOIntegration
+     * @var ReversIO
      */
     public $module;
 
@@ -54,13 +54,19 @@ class ReversIOAbstractAdminController extends ModuleAdminController
 
     public function init()
     {
+        if ($this->ajax) {
+            return;
+        }
+
         $this->displayTestModeWarning();
 
         /** @var APIAuthentication $settingAuthentication */
+        /** @var ReversIO\Services\Decoder\Decoder $decoder */
         $settingAuthentication = $this->module->getContainer()->get('autentification');
+        $decoder = $this->module->getContainer()->get('reversio_decoder');
 
         $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
-        $apiSecretKey = Configuration::get(Config::SECRET_KEY);
+        $apiSecretKey =  $decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
 
         if (!$settingAuthentication->authentication($apiPublicKey, $apiSecretKey)) {
             $this->showHideModuleTabs(0, -1);
@@ -86,7 +92,7 @@ class ReversIOAbstractAdminController extends ModuleAdminController
 
     private function redirectToSettings()
     {
-        if ($this instanceof \AdminReversIOIntegrationSettingsController) {
+        if ($this instanceof \AdminReversIOSettingsController) {
             return;
         }
 
@@ -95,6 +101,7 @@ class ReversIOAbstractAdminController extends ModuleAdminController
 
     public function showHideModuleTabs($tabStatus, $parent)
     {
+        //@todo: split to the service
         $moduleTabs = $this->module->getTabs();
 
         /** @var Versions $version */
