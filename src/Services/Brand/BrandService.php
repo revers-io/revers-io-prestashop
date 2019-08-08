@@ -28,48 +28,42 @@
 
 namespace ReversIO\Services\Brand;
 
+use ReversIO;
+use ReversIO\Adapter\ArrayAdapter;
+use ReversIO\Config\Config;
 use ReversIO\Repository\ProductRepository;
+use ReversIO\Services\APIConnect\ReversIOApi;
+use ReversIO\Services\Cache\Cache;
 
 class BrandService
 {
-    /** @var ProductRepository  */
-    private $productRepository;
+    /**
+     * @var ReversIO
+     */
+    private $module;
 
-    public function __construct(ProductRepository $productRepository)
+    private $arrayAdapter;
+
+    private $listBrands;
+
+    public function __construct(ReversIO $module, ArrayAdapter $arrayAdapter)
     {
-        $this->productRepository = $productRepository;
+        $this->module = $module;
+        $this->arrayAdapter = $arrayAdapter;
     }
 
-    public function getUnknownBrandsByProductIds($products, $brands)
+    public function getBrandIdByManufacturer($manufacturer, $brands)
     {
-        $formattedProductsids = $this->formatProducts($products);
-
-        $formattedBrands = $this->formatBrands($brands);
-
-        $manufacturers = $this->productRepository->getManufacturersNamesByProductIds($formattedProductsids);
-
-        return array_diff($manufacturers, $formattedBrands);
-    }
-
-    public function formatBrands($brands)
-    {
-        $formattedBrands = [];
-
-        foreach ($brands as $brand) {
-            $formattedBrands[$brand['id']] = $brand['name'];
+        if (!$manufacturer) {
+            $manufacturer = Config::UNKNOWN_BRAND;
         }
 
-        return $formattedBrands;
-    }
+        $formattedBrands = $this->arrayAdapter->formatKeysAndValuesArray($brands, 'name', 'id');
 
-    public function formatProducts($products)
-    {
-        $formattedProducts = [];
-
-        foreach ($products as $product) {
-            $formattedProducts[] = $product['id_product'];
+        if (isset($formattedBrands[$manufacturer])) {
+            return $formattedBrands[$manufacturer];
         }
 
-        return $formattedProducts;
+        return false;
     }
 }

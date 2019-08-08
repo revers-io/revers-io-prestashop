@@ -29,33 +29,28 @@
 namespace ReversIO\Services\Orders;
 
 use ReversIO\Services\APIConnect\ReversIOApi;
-use ReversIOIntegration;
+use ReversIO;
 
 class OrdersRetrieveService
 {
-    /** @var ReversIOIntegration */
+    /** @var ReversIO */
     private $module;
 
-    public function __construct(ReversIOIntegration $module)
+    public function __construct(ReversIO $module)
     {
         $this->module = $module;
     }
 
-    public function getRetrievedOrders()
+    public function getRetrievedOrder($orderReference)
     {
-        $retrievedOrdersIds = [];
-
         /** @var ReversIOApi $reversIoApiConnectService */
         $reversIoApiConnectService = $this->module->getContainer()->get('reversIoApiConnect');
-        $retrievedOrders = $reversIoApiConnectService->retrieveOrder();
+        $retrievedOrders = $reversIoApiConnectService->retrieveOrder($orderReference);
 
-        foreach ($retrievedOrders->getContent() as $retrievedOrder) {
-            $retrievedOrdersIds[] = [
-                'orderId' => $retrievedOrder['value']['orderId'],
-                'reference' => $retrievedOrder['value']['orderReference'],
-            ];
-        }
-
-        return $retrievedOrdersIds;
+        return [
+            'orderId' => $retrievedOrders->getContent()['value']['orderId'],
+            'reference' => $retrievedOrders->getContent()['value']['orderReference'],
+            'orderLines' => $retrievedOrders->getContent()['value']['orderLines'],
+        ];
     }
 }

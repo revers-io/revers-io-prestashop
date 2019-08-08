@@ -72,6 +72,7 @@ class DatabaseInstall
 			`id` int(6) NOT NULL AUTO_INCREMENT,
 			`id_order` VARCHAR(255),
 			`reference` VARCHAR(255),
+			`successful` BOOLEAN,
 			PRIMARY KEY(`id`)
 		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8;
 		

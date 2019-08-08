@@ -32,13 +32,13 @@ use Configuration;
 use ReversIO\Config\Config;
 use ReversIO\Install\DatabaseInstall;
 use ReversIO\Services\Versions\Versions;
-use ReversIOIntegration;
+use ReversIO;
 use Tab;
 
 class Uninstaller
 {
     /**
-     * @var ReversIOIntegration
+     * @var ReversIO
      */
     private $module;
 
@@ -51,9 +51,9 @@ class Uninstaller
     /**
      * Uninstall constructor.
      *
-     * @param ReversIOIntegration $module
+     * @param ReversIO $module
      */
-    public function __construct(ReversIOIntegration $module, DatabaseInstall $databaseInstall, Versions $version)
+    public function __construct(ReversIO $module, DatabaseInstall $databaseInstall, Versions $version)
     {
         $this->module = $module;
         $this->databaseInstall = $databaseInstall;
@@ -71,6 +71,8 @@ class Uninstaller
                 && Configuration::deleteByName(Config::TEST_MODE_SETTING)
                 && Configuration::deleteByName(Config::ORDERS_STATUS)
                 && Configuration::deleteByName(Config::ENABLE_LOGGING_SETTING)
-                && Configuration::deleteByName(Config::STORE_LOGS);
+                && Configuration::deleteByName(Config::STORE_LOGS)
+                && Configuration::deleteByName(Config::BRAND_INIT_EXPORT)
+                && Configuration::deleteByName(Config::PRODUCT_INIT_EXPORT);
     }
 }

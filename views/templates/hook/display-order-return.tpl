@@ -1,0 +1,38 @@
+{**
+* Copyright (c) 2019 Revers.io
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is furnished
+* to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* THE SOFTWARE.
+*
+* @author revers.io
+* @copyright Copyright (c) permanent, Revers.io
+* @license   Revers.io
+* @see       /LICENSE
+*}
+
+<section id="reversio" class="box">
+    <h4>{l s='Returns' mod='reversio'}</h4>
+
+    {l s="To check the status of your ongoing return request or open new return requests please click on the button below." mod='reversio'}
+
+    <footer class="form-footer text-sm-left">
+        <br>
+        <input type="hidden" name="id_order" value="15">
+        <a href="{$reversIoLink}" class="btn btn-primary form-control-submit">{l s='View returns' mod='reversio'}</a>
+    </footer>
+</section>

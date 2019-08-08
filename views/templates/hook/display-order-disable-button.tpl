@@ -25,25 +25,13 @@
 * @see       /LICENSE
 *}
 
-<!-- Revers.io block -->
-<div id="formReversIoBlock" class="panel">
-    <div class="panel-heading">
-        <i class="icon-refresh"></i>
-        {l s="Revers.io" mod='reversiointegration'}
-    </div>
-    <div>
-        <div class="table-responsive">
-            <table class="table reversio row-margin-bottom">
-                <tbody>
-                    <tr>
-                        <td style="background-color:#DC143C;color:white">{l s="Error."  mod='reversiointegration'}
-                            <a href="{$logLink}">{l s="Click here" mod='reversiointegration'}</a>
-                            {l s=" to go to error log." mod='reversiointegration'}
-                        </td>
-                        <td style="background-color:#DC143C;color:white">{dateFormat date=$logCreated full=true}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+<section id="reversio" class="box">
+    <h4>{l s='Returns' mod='reversio'}</h4>
+
+    {l s="If you want to return your product, please click on the button below. You will be forwarded to the returns platform." mod='reversio'}
+    <footer class="form-footer text-sm-left">
+        <br>
+        <input type="hidden" name="id_order" value="15">
+        <button class="btn btn-primary form-control-submi disabled">{l s='Request return' mod='reversio'}</button>
+    </footer>
+</section>

@@ -26,32 +26,41 @@
  * @see       /LICENSE
  */
 
+use ReversIO\Config\Config;
+
 if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class ReversIOIntegration extends Module
+class ReversIO extends Module
 {
     private $moduleContainer;
 
     public function __construct()
     {
-        $this->name = $this->l('reversiointegration');
+        $this->name = $this->l('reversio');
         $this->version = '1.0.0';
-        $this->tab = 'others';
+        $this->tab = 'shipping_logistics';
         $this->author = 'Invertus';
         $this->need_instance = 0;
-        $this->description = 'Revers.io integration';
+        $this->description = 'Revers.io';
 
         parent::__construct();
 
         $this->requireAutoloader();
         $this->compile();
 
-        $this->displayName = $this->l('Revers.io integration');
+        $this->displayName = $this->l('Revers.io');
         $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
 
         $this->confirmUninstall = $this->l('Ar you sure you want to uninstall?');
+
+        if (Module::isInstalled('reversio')) {
+            $isTestModeEnabled = (bool) Configuration::get(ReversIO\Config\Config::TEST_MODE_SETTING);
+            if ($isTestModeEnabled) {
+                $this->warning = $this->l('Please note: module is in test mode');
+            }
+        }
     }
 
     public function install()
@@ -121,53 +130,15 @@ class ReversIOIntegration extends Module
                 'visible' => false,
                 'parent' => -1
             ],
+            [
+                'name' => 'Ajax',
+                'ParentClassName' => -1,
+                'class_name' => ReversIO\Config\Config::CONTROLLER_ADMIN_AJAX,
+                'module_tab' => true,
+                'visible' => false,
+                'parent' => -1
+            ],
         ];
-    }
-
-    public function importOrders()
-    {
-        /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIOAPIConnect */
-        $reversIOAPIConnect = $this->getContainer()->get('reversIoApiConnect');
-        return $reversIOAPIConnect->importOrders();
-    }
-
-    public function insertOrdersUrl()
-    {
-        /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIOAPIConnect */
-        $reversIOAPIConnect = $this->getContainer()->get('reversIoApiConnect');
-
-        return $reversIOAPIConnect->retrieveOrderUrl();
-    }
-
-    public function insertOrUpdateProducts()
-    {
-        /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIOAPIConnect */
-        $reversIOAPIConnect = $this->getContainer()->get('reversIoApiConnect');
-        /** @var \ReversIO\Repository\ProductsForExportRepository $productsExport */
-        $productsExport = $this->getContainer()->get('productExportRepository');
-
-        if (Configuration::get(ReversIO\Config\Config::PRODUCT_INIT_EXPORT) === "1") {
-            $products = Product::getProducts($this->context->language->id, 0, 0, 'id_product', 'ASC');
-
-            $productIdsArray = $this->formatProducts($products);
-
-//            TODO: why to create error catch logic if never use?
-            $reversIOAPIConnect->putProducts($productIdsArray, $this->context->language->id);
-
-            Configuration::updateValue(ReversIO\Config\Config::PRODUCT_INIT_EXPORT, 0);
-            return;
-        }
-
-        $productForInsert = $productsExport->getProductsForInsert();
-        $productForUpdate = $productsExport->getProductsForUpdate();
-
-        if (!empty($productForInsert)) {
-            $reversIOAPIConnect->putProducts($productForInsert, $this->context->language->id);
-        }
-
-        if (!empty($productForUpdate)) {
-            $reversIOAPIConnect->updateProducts($productForUpdate, $this->context->language->id);
-        }
     }
 
     public function hookActionAdminOrdersListingFieldsModifier($params)
@@ -189,6 +160,28 @@ class ReversIOIntegration extends Module
         $params['fields'] = $res;
     }
 
+    public function hookActionAdminControllerSetMedia()
+    {
+        Media::addJsDef(array(
+            'initialOrderImportAjaxUrl' => $this->context->link->getAdminLink(
+                ReversIO\Config\Config::CONTROLLER_ADMIN_AJAX
+            ),
+        ));
+
+        $this->context->controller->addJS($this->getPathUri().'views/js/admin/order-import.js');
+    }
+
+    public function hookActionFrontControllerSetMedia()
+    {
+        Media::addJsDef(array(
+            'initialOrderImportAjaxUrl' => $this->context->link->getModuleLink('reversio',
+                ReversIO\Config\Config::FO_CONTROLLER
+            ),
+        ));
+
+        $this->context->controller->addJS($this->getPathUri().'views/js/front/order-import-fo.js');
+    }
+
     public function hookDisplayAdminOrder($params)
     {
         $orderId = $params['id_order'];
@@ -203,24 +196,64 @@ class ReversIOIntegration extends Module
             $this->context->smarty->assign(array(
                 'logCreated' => $logCreated,
                 'logLink' => $this->context->link->getAdminLink(ReversIO\Config\Config::CONTROLLER_LOGS),
+                'orderId' => $orderId,
             ));
 
-            return $this->display(__FILE__, 'views/templates/admin/hook/displayAdminOrder.tpl');
+            return $this->display(__FILE__, 'views/templates/admin/hook/display-admin-order.tpl');
+        } elseif((int) $orderStatus !== Config::SUCCESSFULLY_IMPORTED) {
+            $this->context->smarty->assign(array(
+                'orderId' => $orderId,
+            ));
+            return $this->display(__FILE__, 'views/templates/admin/hook/display-initial-order-export.tpl');
         }
     }
 
     public function hookDisplayOrderDetail($params)
     {
         /** @var \ReversIO\Repository\OrderRepository $orderRepository */
+        /** @var \ReversIO\Services\Orders\OrderStatus $orderStatuses */
+        /** @var \ReversIO\Services\Orders\OrdersRetrieveService $orderRetrieveService */
         $orderRepository = $this->getContainer()->get('orderRepository');
+        $orderStatuses = $this->getContainer()->get('orderStatuses');
         $reversIoLink = $orderRepository->getOrderUrlById($params['order']->id);
+        $orderRetrieveService = $this->getContainer()->get('ordersRetrieveService');
 
-        if ($reversIoLink) {
+        if (in_array($params['order']->current_state, $orderStatuses->getOrderStatusForImport())) {
+
             $this->context->smarty->assign(array(
-                'reversIoLink' => $reversIoLink,
+                'orderId' => $params['order']->id,
             ));
 
-            return $this->display(__FILE__, 'views/templates/hook/displayOrderDetail.tpl');
+            $orderReturnInformation =
+                $orderRetrieveService->getRetrievedOrder($params['order']->reference)['orderLines'][0];
+
+            if (empty($orderReturnInformation)) {
+                return $this->display(__FILE__, 'views/templates/hook/display-order-initial-export.tpl');
+            }
+
+            if ($orderReturnInformation['isOpenForClaims'] && $reversIoLink) {
+                $this->context->smarty->assign(array(
+                    'reversIoLink' => $reversIoLink,
+                ));
+
+                return $this->display(__FILE__, 'views/templates/hook/display-order-detail.tpl');
+            }
+
+            if (!$orderReturnInformation['isOpenForClaims']) {
+                return $this->display(__FILE__, 'views/templates/hook/display-order-disable-button.tpl');
+            }
+
+            if ($orderReturnInformation['hasOpenFile'] &&
+                !empty($orderReturnInformation['openFiles']) && $reversIoLink
+            ) {
+                $this->context->smarty->assign(array(
+                    'reversIoLink' => $reversIoLink,
+                ));
+
+                return $this->display(__FILE__, 'views/templates/hook/display-order-return.tpl');
+            }
+
+            return $this->display(__FILE__, 'views/templates/hook/display-order-import-failed.tpl');
         }
     }
 
@@ -263,6 +296,34 @@ class ReversIOIntegration extends Module
         }
     }
 
+    public function hookActionOrderStatusUpdate($params)
+    {
+        $currentStatusName = $params['newOrderStatus']->name;
+        /** @var \ReversIO\Repository\OrderRepository $orderRepository */
+        /** @var  \ReversIO\Services\Orders\OrderStatus $orderStatuses */
+        /** @var \ReversIO\Services\Orders\OrderImportService $orderImportService */
+        /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIoApiConnect */
+        $orderRepository = $this->getContainer()->get('orderRepository');
+        $orderStatuses = $this->getContainer()->get('orderStatuses');
+        $orderImportService = $this->getContainer()->get('orderImportService');
+        $reversIoApiConnect = $this->getContainer()->get('reversIoApiConnect');
+
+        $currentStatusId = $orderRepository->getOrderStateByStateName($currentStatusName);
+        $statuses = $orderStatuses->getOrderStatusForImport();
+
+        if (in_array($currentStatusId, $statuses)) {
+            try {
+                $response = $orderImportService->importOrder($params['id_order']);
+                if ($response->isSuccess()) {
+                    $orderReference = $orderRepository->getOrderReferenceById($params['id_order']);
+                    $reversIoApiConnect->retrieveOrderUrl($orderReference);
+                }
+            } catch (Exception $e) {
+                throw new Exception('Order was not imported');
+            }
+        }
+    }
+
     /**
      * Require autoloader
      */
@@ -296,18 +357,5 @@ class ReversIOIntegration extends Module
         }
         require_once $containerCache;
         $this->moduleContainer = new $containerClass();
-    }
-
-    private function formatProducts($products)
-    {
-        $productIdsArray = [];
-
-        foreach ($products as $product) {
-            $productIdsArray[] = [
-                'id_product' => $product['id_product']
-            ];
-        }
-
-        return $productIdsArray;
     }
 }

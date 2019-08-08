@@ -85,12 +85,6 @@ class CategoryMapService
                 continue;
             }
 
-            if ($postItemValue === '0') {
-                $this->categoryMapRepository->deleteCategory($categoryId);
-
-                continue;
-            }
-
             $formattedMappedCategories[$categoryId] = $postItemValue;
         }
 
@@ -100,15 +94,11 @@ class CategoryMapService
     public function saveMappedCategories($mappedCategories)
     {
         foreach ($mappedCategories as $categoryId => $modelTypeId) {
-            $categoryMap = new CategoryMap();
-
-            if ($this->categoryMapRepository->getMappedCategoryById($categoryId)) {
-                if (!$this->categoryMapRepository->updateMappedCategory($categoryId, $modelTypeId)) {
-                    return false;
-                };
-
+            if (!$modelTypeId) {
                 continue;
             }
+
+            $categoryMap = new CategoryMap();
 
             $categoryMap->id_category = $categoryId;
             $categoryMap->api_category_id = $modelTypeId;
@@ -120,7 +110,7 @@ class CategoryMapService
 
         return true;
     }
-//TODO: unit test, add category parent validation
+
     public function getModelTypeByCategory($categoryId, $allMappedCategories, $categoriesAndParentsIds)
     {
         $modelType = null;

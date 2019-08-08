@@ -1,4 +1,3 @@
-#!/usr/bin/env php
 <?php
 /**
  *Copyright (c) 2019 Revers.io
@@ -27,28 +26,12 @@
  * @see       /LICENSE
  */
 
-//TODO: argv
-//TODO: remake to Command
-$isRunningFromBrowser = !isset($GLOBALS['argv']);
+header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
 
-if ($isRunningFromBrowser === true) {
-    die("You cannot run this script from browser");
-}
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
 
-include_once(dirname(__FILE__).'/../../config/config.inc.php');
-
-$moduleName = 'reversiointegration';
-
-if (!Module::isEnabled($moduleName)) {
-    echo sprintf('Module %s is not enabled', $moduleName);
-    die;
-}
-
-/** @var ReversIOIntegration $module */
-$module = Module::getInstanceByName($moduleName);
-
-$module->insertOrUpdateProducts();
-
-print_r('Success');
-
-die();
+header('Location: ../');
+exit;

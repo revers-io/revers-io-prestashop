@@ -1,4 +1,3 @@
-#!/usr/bin/env php
 <?php
 /**
  *Copyright (c) 2019 Revers.io
@@ -27,29 +26,16 @@
  * @see       /LICENSE
  */
 
-$isRunningFromBrowser = !isset($GLOBALS['argv']);
+use ReversIO\Controller\ReversIOAbstractAdminController;
 
-if ($isRunningFromBrowser === true) {
-    die("You cannot run this script from browser");
+class AdminReversIOExportController extends ReversIOAbstractAdminController
+{
+    public function postProcess()
+    {
+        /** @var \ReversIO\Services\Log\LogService $logService */
+        $logService = $this->module->getContainer()->get('logService');
+        $logService->downloadLogs();
+
+        return parent::postProcess();
+    }
 }
-
-include_once(dirname(__FILE__).'/../../config/config.inc.php');
-
-$moduleName = 'reversiointegration';
-
-if (!Module::isEnabled($moduleName)) {
-    echo sprintf('Module %s is not enabled', $moduleName);
-    die;
-}
-
-/** @var ReversIOIntegration $module */
-$module = Module::getInstanceByName($moduleName);
-
-$importOrder = $module->importOrders();
-
-if ($importOrder->isSuccess()) {
-    $module->insertOrdersUrl();
-    print_r('Success');
-}
-
-print_r('Success');

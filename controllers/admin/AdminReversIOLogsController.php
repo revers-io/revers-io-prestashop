@@ -29,7 +29,7 @@
 use ReversIO\Config\Config;
 use ReversIO\Controller\ReversIOAbstractAdminController;
 
-class AdminReversIOIntegrationLogsController extends ReversIOAbstractAdminController
+class AdminReversIOLogsController extends ReversIOAbstractAdminController
 {
     public $bootstrap = true;
 

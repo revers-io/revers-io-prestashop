@@ -32,9 +32,18 @@ use Configuration;
 use GuzzleHttp\Exception\ClientException;
 use ReversIO\Config\Config;
 use ReversIO\Response\ReversIoResponse;
+use ReversIO\Services\Decoder\Decoder;
 
 class Token
 {
+    /** @var Decoder */
+    private $decoder;
+
+    public function __construct(Decoder $decoder)
+    {
+        $this->decoder = $decoder;
+    }
+
     /**
      * This function is retrieving the token from Revers.io
      * https://demo-api-portal.revers.io/docs/services/revers/operations/GetToken?
@@ -46,7 +55,7 @@ class Token
 
         if ($apiPublicKey === null && $apisecretKey === null) {
             $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
-            $apisecretKey = Configuration::get(Config::SECRET_KEY);
+            $apisecretKey = $this->decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
         }
 
         $apiUrlBase = Config::API_URL_BASE_LIVE;

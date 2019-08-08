@@ -52,32 +52,17 @@ class CategoryMapRepository
         return $result;
     }
 
-    public function getMappedCategoryById($id)
+    public function deleteAllMappedCategories()
     {
-        $query = new DbQuery();
-
-        $query->select('id_category_map');
-        $query->from('revers_io_category_map');
-        $query->where('id_category = ' . (int) $id);
-
-        return Db::getInstance()->getValue($query);
-    }
-
-    public function updateMappedCategory($categoryId, $apiCategoryId)
-    {
-        return Db::getInstance()->update(
-            'revers_io_category_map',
-            array(
-                'api_category_id' => pSQL($apiCategoryId)
-            ),
-            'id_category = ' . (int) $categoryId
-        );
-    }
-
-    public function deleteCategory($categoryId)
-    {
-        $sql = 'DELETE FROM '._DB_PREFIX_.'revers_io_category_map WHERE id_category = '. (int) $categoryId;
+        $sql = 'DELETE FROM '._DB_PREFIX_.'revers_io_category_map';
 
         return Db::getInstance()->execute($sql);
+    }
+
+    public function getCountCategoryMap()
+    {
+        $sql = 'SELECT id_category_map FROM '._DB_PREFIX_.'revers_io_category_map';
+
+        return Db::getInstance()->executeS($sql);
     }
 }

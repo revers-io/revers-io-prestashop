@@ -31,13 +31,13 @@ namespace ReversIO\Install;
 use Language;
 use ReversIO\Services\Orders\OrderListBuilder;
 use ReversIO\Services\Versions\Versions;
-use ReversIOIntegration;
+use ReversIO;
 use Tab;
 
 class Installer
 {
     /**
-     * @var ReversIOIntegration
+     * @var ReversIO
      */
     private $module;
 
@@ -53,7 +53,7 @@ class Installer
     private $moduleConfiguration;
 
     public function __construct(
-        ReversIOIntegration $module,
+        ReversIO $module,
         DatabaseInstall $databaseInstall,
         OrderListBuilder $ordersAdminPage,
         Versions $version,
@@ -130,6 +130,14 @@ class Installer
                 return false;
             }
         }
+
+        $now = new \DateTime();
+
+        \Configuration::updateValue(
+            ReversIO\Config\Config::ORDER_DATE_FROM,
+            date('Y-m-d', strtotime($now->format('Y-m-d'). ' - 15 days'))
+        );
+        \Configuration::updateValue(ReversIO\Config\Config::ORDER_DATE_TO, $now->format('Y-m-d'));
 
         return true;
     }

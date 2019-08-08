@@ -38,7 +38,7 @@
     <div class="model-list-container">
         <select class="model-list-select chosen" name="{$category.id_category}-modelList">
             <option value="0" {if $category.modelType == 0}selected{/if}>
-                {l s='Select model type' mod='reversiointegration'}
+                {l s='Select model type' mod='reversio'}
             </option>
             {html_options options=$modelTypesList selected=$category.modelType}
         </select>

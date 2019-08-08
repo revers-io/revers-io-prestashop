@@ -30,6 +30,7 @@ namespace ReversIO\Repository\Logs;
 
 use DateTime;
 use Db;
+use ReversIO\Repository\BrandRepository;
 use ReversIO\Repository\OrderRepository;
 use ReversIO\Repository\ProductRepository;
 
@@ -41,10 +42,17 @@ class Logger
     /** @var ProductRepository */
     private $productRepository;
 
-    public function __construct(OrderRepository $orderRepository, ProductRepository $productRepository)
-    {
+    /** @var BrandRepository */
+    private $brandRepository;
+
+    public function __construct(
+        OrderRepository $orderRepository,
+        ProductRepository $productRepository,
+        BrandRepository $brandRepository
+    ) {
         $this->orderRepository = $orderRepository;
         $this->productRepository = $productRepository;
+        $this->brandRepository = $brandRepository;
     }
 
     public function insertOrderLogs($reference, $message)
@@ -75,6 +83,22 @@ class Logger
                             "' . pSQL($reference) . '", 
                             "' . pSQL($message) . '", 
                             "' . pSQL($now->format("Y-m-d H:i:s")) . '")';
+
+        return Db::getInstance()->execute($sql);
+    }
+
+    public function insertBrandLogs($name, $message)
+    {
+        $now = new DateTime();
+        $brandId = $this->brandRepository->getBrandIdByName($name);
+
+        $sql = 'INSERT 
+                  INTO ' . _DB_PREFIX_ . 'revers_io_logs (error_log_identifier, type, reference, message, created_date) 
+                  VALUES (' . (int)$brandId . ', 
+                                "Brand", 
+                                "' . pSQL($name) . '", 
+                                "' . pSQL($message) . '", 
+                                "' . pSQL($now->format("Y-m-d H:i:s")) . '")';
 
         return Db::getInstance()->execute($sql);
     }
