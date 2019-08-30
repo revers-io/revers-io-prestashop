@@ -74,34 +74,6 @@ class ProductService
                     $images[0]['id_image']
                 );
             }
-
-            $productsArray[] = [
-                "brandId" => $brandId,
-                "modelTypeId" => $categoryId,
-                "sKU" => $product->reference,
-                "label" => $product->name[$language],
-                "eANs" => [
-                    $product->ean13,
-                ],
-                "dimension" => [
-                    "lengthInCm" => (float)$product->depth,
-                    "widthInCm" => (float)$product->width,
-                    "heightInCm" => (float)$product->height,
-                ],
-                "photoUrl" => $imageUrl,
-                "additionalInformation" => [
-                    "isReturnable" => true,
-                    "isRepairable" => true,
-                    "isTransportable" => true,
-                    "isSerializable" => false,
-                    "isOnSiteInterventionPossible" => false,
-                    "isCumbersome" => false
-                ],
-                "state" => 'new',
-                "weight" => (float)$product->weight,
-                "isLowValue" => true,
-                "id_product" => $product->id,
-            ];
         }
 
         $productInfoArray = [
