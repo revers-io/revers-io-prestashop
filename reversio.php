@@ -44,6 +44,7 @@ class ReversIO extends Module
         $this->author = 'Invertus';
         $this->need_instance = 0;
         $this->description = 'Revers.io';
+        $this->module_key = 'c7843c2c00feb49853bd40ff72820396';
 
         parent::__construct();
 
