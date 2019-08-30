@@ -154,7 +154,8 @@ class ModelService
             }
         }
 
-        //@todo: change this response for the exception and later catch the exception and in catch block put the product api
+        //@todo: change this response for the exception and later catch the exception and in catch
+        // block put the product api
         $response = new ReversIoResponse();
 
         if ($modelId) {

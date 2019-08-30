@@ -41,16 +41,13 @@ class AdminReversIOAjaxController extends ReversIOAbstractAdminController
 
         /** @var \ReversIO\Services\Orders\OrderImportService $orderImportService */
         /** @var \ReversIO\Repository\OrderRepository $orderRepository */
-        /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIoApiConnect */
         $orderImportService = $this->module->getContainer()->get('orderImportService');
         $orderRepository = $this->module->getContainer()->get('orderRepository');
-        $reversIoApiConnect = $this->module->getContainer()->get('reversIoApiConnect');
 
         $orderRepository->deleteUnsuccessfullyOrders();
 
         $sumFailed = 0;
         $sumImported = 0;
-        $totalSum = 0;
 
         $reversIoOrderImportResponse = $orderImportService->importOrders();
 

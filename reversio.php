@@ -174,7 +174,8 @@ class ReversIO extends Module
     public function hookActionFrontControllerSetMedia()
     {
         Media::addJsDef(array(
-            'initialOrderImportAjaxUrl' => $this->context->link->getModuleLink('reversio',
+            'initialOrderImportAjaxUrl' => $this->context->link->getModuleLink(
+                'reversio',
                 ReversIO\Config\Config::FO_CONTROLLER
             ),
         ));
@@ -200,7 +201,7 @@ class ReversIO extends Module
             ));
 
             return $this->display(__FILE__, 'views/templates/admin/hook/display-admin-order.tpl');
-        } elseif((int) $orderStatus !== Config::SUCCESSFULLY_IMPORTED) {
+        } elseif ((int) $orderStatus !== Config::SUCCESSFULLY_IMPORTED) {
             $this->context->smarty->assign(array(
                 'orderId' => $orderId,
             ));
@@ -219,7 +220,6 @@ class ReversIO extends Module
         $orderRetrieveService = $this->getContainer()->get('ordersRetrieveService');
 
         if (in_array($params['order']->current_state, $orderStatuses->getOrderStatusForImport())) {
-
             $this->context->smarty->assign(array(
                 'orderId' => $params['order']->id,
             ));
