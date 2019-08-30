@@ -26,7 +26,7 @@
  * @see       /LICENSE
  */
 
-class reversioAjaxModuleFrontController extends ModuleFrontController
+class ReversioAjaxModuleFrontController extends ModuleFrontController
 {
     public function postProcess()
     {

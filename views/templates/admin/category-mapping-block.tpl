@@ -36,7 +36,7 @@
                         {l s="make a type specimen book. It has survived not only five centuries, but" mod='reversio'}
                         {l s="also the leap into electronic typesetting, remaining essentially unchanged." mod='reversio'}
                         {l s="It was popularised in the 1960s with the release of Letraset sheets" mod='reversio'}
-                        {l s="containing Lorem Ipsum passages, and more recently with desktop publishing"}
+                        {l s="containing Lorem Ipsum passages, and more recently with desktop publishing" mod='reversio'}
                         {l s="software like Aldus PageMaker including versions of Lorem Ipsum." mod='reversio'}
         </div>
 

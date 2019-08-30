@@ -392,7 +392,6 @@ class ReversIOApi
             );
             $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
             if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
-
                 $this->logger->insertOrderLogs(
                     $orderBody['orderReference'],
                     $errorMessage
@@ -478,32 +477,30 @@ class ReversIOApi
 
         $retrievedOrder = $this->ordersRetrieveService->getRetrievedOrder($orderId);
 
-//        foreach ($retrievedOrders as $retrievedOrder) {
-            $body = ['orderId' => $retrievedOrder['orderId']];
+        $body = ['orderId' => $retrievedOrder['orderId']];
 
-            try {
-                $url = 'links';
-                $requestHeadersAndBody = [
-                    'headers' => $this->apiHeadersBuilder->buildHeadersForPutAndPost(),
-                    'body' => json_encode($body),
-                ];
+        try {
+            $url = 'links';
+            $requestHeadersAndBody = [
+                'headers' => $this->apiHeadersBuilder->buildHeadersForPutAndPost(),
+                'body' => json_encode($body),
+            ];
 
-                $request = $this->proxyApiClient->post($url, $requestHeadersAndBody);
+            $request = $this->proxyApiClient->post($url, $requestHeadersAndBody);
 
-                $this->orderRepository->insertRetrievedOrdersUrl(
-                    $retrievedOrder['reference'],
-                    $request->getContent()['value']
-                );
+            $this->orderRepository->insertRetrievedOrdersUrl(
+                $retrievedOrder['reference'],
+                $request->getContent()['value']
+            );
 
-                $response->setSuccess(true);
-                $response->setContent($request);
-            } catch (\GuzzleHttp\Exception\ClientException $exception) {
-                $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+            $response->setSuccess(true);
+            $response->setContent($request);
+        } catch (\GuzzleHttp\Exception\ClientException $exception) {
+            $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
 
-                $response->setSuccess(false);
-                $response->setMessage($errorMessage);
-            }
-//        }
+            $response->setSuccess(false);
+            $response->setMessage($errorMessage);
+        }
         return $response;
     }
 

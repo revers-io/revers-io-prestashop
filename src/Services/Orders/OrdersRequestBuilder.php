@@ -215,9 +215,7 @@ class OrdersRequestBuilder
 
     private function getOrderForImports($orderId)
     {
-        $orderStatusesForImport = $this->orderStatuses->getOrderStatusForImport();
-
-        $order = $this->orderRepository->getOrderForImportById($orderId, $orderStatusesForImport);
+        $order = $this->orderRepository->getOrderForImportById($orderId);
 
         if ($order) {
             return $order;

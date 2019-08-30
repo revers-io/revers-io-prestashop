@@ -1,4 +1,5 @@
-/*
+<?php
+/**
  *Copyright (c) 2019 Revers.io
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,27 +19,14 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- *
- * @author revers.io
- * @copyright Copyright (c) permanent, Revers.io
- * @license   Revers.io
- * @see       /LICENSE
  */
 
-$(document).ready(function () {
+header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+header('Last-Modified: '.gmdate('D, d M Y H:i:s').' GMT');
 
-    hideShowField();
-    $(document).on('change', $('#REVERS_IO_ENABLE_LOGGING_SETTING_on'), function () {
-        hideShowField();
-    });
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
 
-    function hideShowField() {
-        if ($("#REVERS_IO_ENABLE_LOGGING_SETTING_on:checked").val() === '1') {
-            $('#conf_id_REVERS_IO_STORE_LOGS').closest('.form-group').show();
-            $('#conf_id_REVERSIODownload').closest('.form-group').show();
-        } else {
-            $('#conf_id_REVERS_IO_STORE_LOGS').closest('.form-group').hide();
-            $('#conf_id_REVERSIODownload').closest('.form-group').hide();
-        }
-    }
-});
+header('Location: ../');
+exit;

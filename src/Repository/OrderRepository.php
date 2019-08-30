@@ -43,7 +43,7 @@ class OrderRepository
         $this->colourGetter = $colourGetter;
     }
 
-    public function getOrdersForImport($importStatuses, $limit = false, $dateFrom, $dateTo)
+    public function getOrdersForImport($importStatuses, $dateFrom, $dateTo, $limit = false)
     {
         $sql = 'SELECT '._DB_PREFIX_.'orders.`id_order` as `'._DB_PREFIX_.'order`
                 FROM '._DB_PREFIX_.'orders 
@@ -61,7 +61,7 @@ class OrderRepository
         return Db::getInstance()->executeS($sql);
     }
 
-    public function getOrderForImportById($orderId, $importStatuses)
+    public function getOrderForImportById($orderId)
     {
         $sql = 'SELECT '._DB_PREFIX_.'orders.id_order as `orderId`
                 FROM '._DB_PREFIX_.'orders 

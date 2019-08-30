@@ -230,9 +230,7 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
 
     public function postProcess()
     {
-        if (
-            Tools::isSubmit('submitReversIOOrdersStatus')
-        ) {
+        if (Tools::isSubmit('submitReversIOOrdersStatus')) {
             Configuration::updateValue(
                 Config::ORDERS_STATUS,
                 json_encode(Tools::getValue('orders_status'))
@@ -285,11 +283,9 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
         if (Tools::isSubmit('submitReversIOAuthentication') &&
             (Tools::isSubmit(Config::PUBLIC_KEY) && Tools::isSubmit(Config::SECRET_KEY))
         ) {
-
             $passwordPlaceholder = $this->getPasswordPlaceholder();
 
-            if (
-                empty(Tools::getValue(Config::SECRET_KEY))
+            if (empty(Tools::getValue(Config::SECRET_KEY))
                 || Tools::getValue(Config::SECRET_KEY) === $passwordPlaceholder
             ) {
                 Configuration::updateValue(
@@ -302,7 +298,9 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
 
             Configuration::updateValue(Config::TEST_MODE_SETTING, Tools::getValue(Config::TEST_MODE_SETTING));
             Configuration::updateValue(Config::PUBLIC_KEY, Tools::getValue(Config::PUBLIC_KEY));
+            // @codingStandardsIgnoreStart
             Configuration::updateValue(Config::SECRET_KEY, base64_encode(Tools::getValue(Config::SECRET_KEY)));
+            // @codingStandardsIgnoreEnd
 
             $authenticationResponse = $settingAuthentication->authentication(
                 Tools::getValue(Config::PUBLIC_KEY),

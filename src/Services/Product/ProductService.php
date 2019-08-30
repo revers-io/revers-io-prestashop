@@ -60,7 +60,7 @@ class ProductService
 
         $images = $product->getImages($language);
 
-        if(!empty($images)) {
+        if (!empty($images)) {
             $imageUrl = Context::getContext()->link->getImageLink(
                 $product->link_rewrite[$language],
                 $images[0]['id_image']
