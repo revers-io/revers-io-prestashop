@@ -65,7 +65,7 @@ class OrderRepository
     {
         $sql = 'SELECT '._DB_PREFIX_.'orders.id_order as `orderId`
                 FROM '._DB_PREFIX_.'orders 
-                WHERE '._DB_PREFIX_.'orders.id_order = ' . $orderId . '
+                WHERE '._DB_PREFIX_.'orders.id_order = ' . (int) $orderId . '
                 AND '._DB_PREFIX_.'orders.`current_state`';
 //                 IN ('.implode(',', array_map('intval', $importStatuses)).')';
 
