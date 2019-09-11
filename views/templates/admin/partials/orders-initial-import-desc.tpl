@@ -26,5 +26,5 @@
 *}
 
 <div class="alert-info alert">
-    {l s="Import orders to revers.io" mod='reversio'}
+    {l s='Import orders to revers.io' mod='reversio'}
 </div>

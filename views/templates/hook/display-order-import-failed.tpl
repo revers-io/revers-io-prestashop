@@ -28,5 +28,5 @@
 <section id="reversio" class="box">
     <h4>{l s='Returns' mod='reversio'}</h4>
 
-    {l s="Sorry, something went wrong. Please contact the Seller using Prestashop contact form." mod='reversio'}
+    {l s='Sorry, something went wrong. Please contact the Seller using Prestashop contact form.' mod='reversio'}
 </section>

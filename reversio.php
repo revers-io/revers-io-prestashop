@@ -41,7 +41,7 @@ class ReversIO extends Module
         $this->name = $this->l('reversio');
         $this->version = '1.0.0';
         $this->tab = 'shipping_logistics';
-        $this->author = 'Invertus';
+        $this->author = 'Revers.io';
         $this->need_instance = 0;
         $this->description = 'Revers.io';
         $this->module_key = 'c7843c2c00feb49853bd40ff72820396';

@@ -29,16 +29,16 @@
 <div id="formReversIoBlock" class="panel">
     <div class="panel-heading">
         <i class="icon-refresh"></i>
-        {l s="Revers.io" mod='reversio'}
+        {l s='Revers.io' mod='reversio'}
     </div>
     <div>
         <div class="table-responsive">
             <table class="table reversio row-margin-bottom">
                 <tbody>
                     <tr>
-                        <td style="background-color:#DC143C;color:white">{l s="Error."  mod='reversio'}
-                            <a href="{$logLink}">{l s="Click here" mod='reversio'}</a>
-                            {l s=" to go to error log." mod='reversio'}
+                        <td style="background-color:#DC143C;color:white">{l s='Error.'  mod='reversio'}
+                            <a href="{$logLink}">{l s='Click here' mod='reversio'}</a>
+                            {l s='' to go to error log.'' mod='reversio'}
                         </td>
                         <td style="background-color:#DC143C;color:white">{dateFormat date=$logCreated full=true}</td>
                     </tr>

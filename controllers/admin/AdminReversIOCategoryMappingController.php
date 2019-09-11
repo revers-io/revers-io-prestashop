@@ -60,11 +60,7 @@ class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminContro
 
     public function displayCategoryMappingWarning()
     {
-        $this->informations['revCategoryMap'] =
-            $this->module->l(
-                'You should map as many as possible PrestaShop categories for better experience',
-                self::FILENAME
-            );
+        $this->informations['revCategoryMap'] = $this->l('You should map as many as possible PrestaShop categories for better experience', self::FILENAME);
     }
 
     public function postProcess()
