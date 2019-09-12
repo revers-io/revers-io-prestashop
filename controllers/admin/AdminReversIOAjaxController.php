@@ -33,6 +33,10 @@ class AdminReversIOAjaxController extends ReversIOAbstractAdminController
 {
     public function ajaxProcessImportOrdersToReversIo()
     {
+        if (Tools::getValue('token_bo') !==  Tools::getAdminTokenLite('AdminReversIOAjaxController')) {
+            die();
+        }
+
         $this->updateValues(
             Tools::getValue('orders_status'),
             Tools::getValue('orders_date_from'),
@@ -72,6 +76,10 @@ class AdminReversIOAjaxController extends ReversIOAbstractAdminController
 
     public function ajaxProcessImportOrderToReversIo()
     {
+        if (Tools::getValue('token_bo') !==  Tools::getAdminTokenLite('AdminReversIOAjaxController')) {
+            die();
+        }
+
         /** @var \ReversIO\Services\Orders\OrderImportService $orderImportService */
         /** @var \ReversIO\Repository\OrderRepository $orderRepository */
         /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIoApiConnect */

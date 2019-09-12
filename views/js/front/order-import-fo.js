@@ -35,6 +35,7 @@ $(document).ready(function () {
                 action: 'foImportOrderToReversIo',
                 ajax: 1,
                 orderId: $('.revers-io-order-id').val(),
+                token: prestashop.static_token,
             },
             success: function (response) {
                 response = JSON.parse(response);

@@ -38,7 +38,8 @@ $(document).ready(function () {
                 ajax: 1,
                 orders_status: $('select[name="orders_status[]"]').val(),
                 orders_date_from: $('input[name="orders_date_from"]').val(),
-                orders_date_to: $('input[name="orders_date_to"]').val()
+                orders_date_to: $('input[name="orders_date_to"]').val(),
+                token_bo: token_bo,
             },
             success: function (response) {
                 response = JSON.parse(response);

@@ -167,6 +167,7 @@ class ReversIO extends Module
             'initialOrderImportAjaxUrl' => $this->context->link->getAdminLink(
                 ReversIO\Config\Config::CONTROLLER_ADMIN_AJAX
             ),
+//            'token_bo' => Tools::getAdminTokenLite('AdminReversIOAjaxController'),
         ));
 
         $this->context->controller->addJS($this->getPathUri().'views/js/admin/order-import.js');
@@ -179,6 +180,7 @@ class ReversIO extends Module
                 'reversio',
                 ReversIO\Config\Config::FO_CONTROLLER
             ),
+            'token' => Tools::getToken('token'),
         ));
 
         $this->context->controller->addJS($this->getPathUri().'views/js/front/order-import-fo.js');
