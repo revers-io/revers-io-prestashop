@@ -32,6 +32,10 @@ class ReversioAjaxModuleFrontController extends ModuleFrontController
     {
         parent::postProcess();
 
+        if (!$this->isTokenValid()) {
+            die();
+        }
+
         /** @var \ReversIO\Services\Orders\OrderImportService $orderImportService */
         /** @var \ReversIO\Repository\OrderRepository $orderRepository */
         /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIoApiConnect */

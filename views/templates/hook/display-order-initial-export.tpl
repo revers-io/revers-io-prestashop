@@ -28,7 +28,7 @@
 <section id="reversio" class="box">
     <h4>{l s='Returns' mod='reversio'}</h4>
 
-    {l s="If you want to return your product, please click on the button below. You will be forwarded to the returns platform." mod='reversio'}
+    {l s='If you want to return your product, please click on the button below. You will be forwarded to the returns platform.' mod='reversio'}
     <footer class="form-footer text-sm-left">
         <br>
         <button type="submit" id="submitInitialOrderImport" class="btn btn-primary js-revers-io-order-import-button" name="submitInitialOrderImport">

@@ -29,13 +29,13 @@ $(document).ready(function () {
     $('body').on('click', '.js-revers-io-order-import-button', importOrderToReversIo);
 
     function importOrderToReversIo() {
-        console.log(initialOrderImportAjaxUrl);
         $.ajax(initialOrderImportAjaxUrl, {
             method: 'POST',
             data: {
                 action: 'importOrderToReversIo',
                 ajax: 1,
                 orderId: $('.revers-io-order-id').val(),
+                token_bo: token_bo,
             },
             success: function (response) {
                 response = JSON.parse(response);

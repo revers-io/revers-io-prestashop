@@ -28,7 +28,7 @@
 <section id="reversio" class="box">
     <h4>{l s='Returns' mod='reversio'}</h4>
 
-    {l s="To check the status of your ongoing return request or open new return requests please click on the button below." mod='reversio'}
+    {l s='To check the status of your ongoing return request or open new return requests please click on the button below.' mod='reversio'}
 
     <footer class="form-footer text-sm-left">
         <br>
