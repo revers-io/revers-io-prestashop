@@ -29,6 +29,7 @@
 namespace ReversIO\Install;
 
 use Language;
+use ReversIO\Config\Config;
 use ReversIO\Services\Orders\OrderListBuilder;
 use ReversIO\Services\Versions\Versions;
 use ReversIO;
@@ -138,6 +139,8 @@ class Installer
             date('Y-m-d', strtotime($now->format('Y-m-d'). ' - 15 days'))
         );
         \Configuration::updateValue(ReversIO\Config\Config::ORDER_DATE_TO, $now->format('Y-m-d'));
+
+        \Configuration::updateValue(Config::ORDERS_STATUS, json_encode(array(4)));
 
         return true;
     }

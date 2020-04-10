@@ -38,7 +38,7 @@
                     <tr>
                         <td style="background-color:#DC143C;color:white">{l s='Error.'  mod='reversio'}
                             <a href="{$logLink}">{l s='Click here' mod='reversio'}</a>
-                            {l s='' to go to error log.'' mod='reversio'}
+                            {l s='to go to error log.' mod='reversio'}
                         </td>
                         <td style="background-color:#DC143C;color:white">{dateFormat date=$logCreated full=true}</td>
                     </tr>

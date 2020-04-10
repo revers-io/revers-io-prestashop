@@ -55,12 +55,12 @@ class ExportedProductsRepository
         return Db::getInstance()->execute($sql);
     }
 
-    public function insertExportedProducts($productId)
+    public function insertExportedProducts($productId, $reversIOProductId)
     {
         $now = new \DateTime();
 
-        $sql = 'INSERT INTO '._DB_PREFIX_.'revers_io_exported_products (id_product, add_date)
-                            VALUES ("'. (int) $productId.'", "'.pSQL($now->format("Y-m-d H:i:s")).'")';
+        $sql = 'INSERT INTO '._DB_PREFIX_.'revers_io_exported_products (id_product, add_date, reversio_product_id)
+                            VALUES ("'. (int) $productId.'", "'.pSQL($now->format("Y-m-d H:i:s")).'", "'.pSQL($reversIOProductId).'")';
 
         return Db::getInstance()->execute($sql);
     }

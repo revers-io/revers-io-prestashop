@@ -60,12 +60,13 @@ class ProductService
 
         $images = $product->getImages($language);
 
+        $imageUrl = "";
+
         if (!empty($images)) {
             $imageUrl = Context::getContext()->link->getImageLink(
                 $product->link_rewrite[$language],
                 $images[0]['id_image']
             );
-
         }
 
         $productInfoArray = [
@@ -77,18 +78,18 @@ class ProductService
                 $product->ean13,
             ],
             "dimension" => [
-                "lengthInCm" => (float)$product->depth,
-                "widthInCm" => (float)$product->width,
-                "heightInCm" => (float)$product->height,
+                "lengthInCm" => (int) round($product->depth),
+                "widthInCm" => (int) round($product->width),
+                "heightInCm" => (int) round($product->height),
             ],
             "photoUrl" => $imageUrl,
             "additionalInformation" => [
                 "isReturnable" => true,
                 "isRepairable" => true,
                 "isTransportable" => true,
-                "isSerializable" => false,
-                "isOnSiteInterventionPossible" => false,
-                "isCumbersome" => false
+                "isSerializable" => true,
+                "isOnSiteInterventionPossible" => true,
+                "isCumbersome" => true
             ],
             "state" => 'new',
             "weight" => (float)$product->weight,
@@ -103,25 +104,36 @@ class ProductService
     {
         $product = new Product($productIdForUpdate);
 
+        $images = $product->getImages($languageId);
+
+        $imageUrl = "";
+
+        if (!empty($images)) {
+            $imageUrl = Context::getContext()->link->getImageLink(
+                $product->link_rewrite[$languageId],
+                $images[0]['id_image']
+            );
+        }
+
         $productUpdateInfoArray = [
             "sKU" => $product->reference,
             "eANs" => [
                 $product->ean13,
             ],
             "dimension" => [
-                "lengthInCm" => (float)$product->depth,
-                "widthInCm" => (float)$product->width,
-                "heightInCm" => (float)$product->height,
+                "lengthInCm" => (int) round($product->depth),
+                "widthInCm" => (int) round($product->width),
+                "heightInCm" => (int) round($product->height),
             ],
 
-            "photoUrl" => $product->getLink(),
+            "photoUrl" => $imageUrl,
             "additionalInformation" => [
                 "isReturnable" => true,
                 "isRepairable" => true,
                 "isTransportable" => true,
-                "isSerializable" => false,
-                "isOnSiteInterventionPossible" => false,
-                "isCumbersome" => false
+                "isSerializable" => true,
+                "isOnSiteInterventionPossible" => true,
+                "isCumbersome" => true
             ],
             "state" => 'new',
             "weight" => (float)$product->weight,

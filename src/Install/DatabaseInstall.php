@@ -114,6 +114,7 @@ class DatabaseInstall
 		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_exported_products` (
 			`id` int(6) NOT NULL AUTO_INCREMENT UNIQUE,
 			`id_product` int(11) NOT NULL ,
+			`reversio_product_id` VARCHAR(255),
 			`add_date` DATETIME,
 			`update_date` DATETIME,
 			PRIMARY KEY(`id_product`)

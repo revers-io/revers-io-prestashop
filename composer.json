@@ -6,5 +6,8 @@
       "ReversIO\\": "src/"
     },
     "classmap":  ["src/Entity/ProductForExport.php", "src/Entity/CategoryMap.php"]
+  },
+  "config": {
+    "prepend-autoloader": false
   }
 }

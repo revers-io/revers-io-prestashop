@@ -65,8 +65,7 @@ class OrderRepository
     {
         $sql = 'SELECT '._DB_PREFIX_.'orders.id_order as `orderId`
                 FROM '._DB_PREFIX_.'orders 
-                WHERE '._DB_PREFIX_.'orders.id_order = ' . (int) $orderId . '
-                AND '._DB_PREFIX_.'orders.`current_state`';
+                WHERE '._DB_PREFIX_.'orders.id_order = ' . (int) $orderId;
 //                 IN ('.implode(',', array_map('intval', $importStatuses)).')';
 
         return Db::getInstance()->getValue($sql);
@@ -178,10 +177,19 @@ class OrderRepository
     {
         $colourId = $this->getColourByStatus($status);
         $orderId = $this->getOrderIdByReference($orderReference);
+        $currentOrderStatus = $this->getOrderStatus($orderId);
 
         $ordersFromStatusTable = $this->getOrdersFromReversStatusTable($orderId);
 
-        if ($orderId !== $ordersFromStatusTable) {
+        if ($orderId === $ordersFromStatusTable && (int) $currentOrderStatus !== 1) {
+            $sqlDelete = 'DELETE FROM '._DB_PREFIX_.'revers_io_orders WHERE id_order = '.(int)$orderId;
+            Db::getInstance()->execute($sqlDelete);
+
+            $sql = 'INSERT INTO '._DB_PREFIX_.'revers_io_orders (id_order, id_order_status)
+                            VALUES ('. (int) $orderId.', "'. (int) $colourId.'")';
+
+            return Db::getInstance()->execute($sql);
+        } elseif ($orderId !== $ordersFromStatusTable) {
             $sql = 'INSERT INTO '._DB_PREFIX_.'revers_io_orders (id_order, id_order_status)
                             VALUES ('. (int) $orderId.', "'. (int) $colourId.'")';
 

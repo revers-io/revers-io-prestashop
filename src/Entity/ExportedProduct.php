@@ -34,15 +34,18 @@ class ExportedProduct extends ObjectModel
 {
     public $id_product;
 
+    public $reversio_product_id;
+
     public $add_date;
 
     public $update_date;
 
     public static $definition = array(
-        'table'   => 'revers_io_products_for_export',
+        'table'   => 'revers_io_exported_products',
         'primary' => 'id',
         'fields' => array(
             'id_product' => array('type' => self::TYPE_INT, 'validate' => 'isInt'),
+            'reversio_product_id' => array('type' => self::TYPE_STRING, 'validate' => 'isString'),
             'add_date' => array('type' => self::TYPE_DATE, 'validate' => 'isDateOrNull'),
             'update_date' => array('type' => self::TYPE_DATE, 'validate' => 'isDateOrNull'),
         )
