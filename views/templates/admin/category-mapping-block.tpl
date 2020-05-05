@@ -30,14 +30,11 @@
         <div class="panel-heading">{l s='Category mapping' mod='reversio'}</div>
 
         <div class="alert alert-info">
-            {l s='Lorem Ipsum is simply dummy text of the printing and typesetting industry.' mod='reversio'}
-                       {l s='Lorem Ipsum has been the industry\'\s standard dummy text ever since the' mod='reversio'}
-                        {l s='1500s, when an unknown printer took a galley of type and scrambled it to' mod='reversio'}
-                        {l s='make a type specimen book. It has survived not only five centuries, but' mod='reversio'}
-                        {l s='also the leap into electronic typesetting, remaining essentially unchanged.' mod='reversio'}
-                        {l s='It was popularised in the 1960s with the release of Letraset sheets' mod='reversio'}
-                        {l s='containing Lorem Ipsum passages, and more recently with desktop publishing' mod='reversio'}
-                        {l s='software like Aldus PageMaker including versions of Lorem Ipsum.' mod='reversio'}
+            {l s='Before you start managing your returns with Revers.io module you should first map your product catalog with the Revers.io catalog.' mod='reversio'}
+            {l s='The mapping allows you to: offer to your Customer a list of return reasons specific for each category of product, suggest relevant transport options depending on product characteristics (weight, dimensions...) etc.' mod='reversio'}
+            {l s='Simply choose for each category of your catalog the most relevant option from the dropdown list.' mod='reversio'}
+            {l s='Please note that there is an inheritance mechanism: if you have mapped parent categories, but haven\'t mapped their child subcategories, they will inherit values from their parents.' mod='reversio'}
+            {l s='It is especially useful for Sellers with big catalogs, as it saves time and enables a quick start.' mod='reversio'}
         </div>
 
         <div class="table-responsive-row clearfix">

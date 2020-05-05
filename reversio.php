@@ -42,9 +42,10 @@ class ReversIO extends Module
         $this->name = $this->l('reversio');
         $this->version = '1.0.0';
         $this->tab = 'shipping_logistics';
-        $this->author = 'Invertus';
+        $this->author = 'Revers.io';
         $this->need_instance = 0;
         $this->description = 'Revers.io';
+        $this->module_key = 'c7843c2c00feb49853bd40ff72820396';
 
         parent::__construct();
 
@@ -54,7 +55,7 @@ class ReversIO extends Module
         $this->displayName = $this->l('Revers.io');
         $this->ps_versions_compliancy = ['min' => '1.7', 'max' => _PS_VERSION_];
 
-        $this->confirmUninstall = $this->l('Ar you sure you want to uninstall?');
+        $this->confirmUninstall = $this->l('Are you sure you want to uninstall?');
 
         if (Module::isInstalled('reversio')) {
             $isTestModeEnabled = (bool) Configuration::get(ReversIO\Config\Config::TEST_MODE_SETTING);

@@ -100,7 +100,7 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
         return [
             'title' =>    $this->l('Main settings'),
             'icon' =>     'icon-cogs',
-            'description' => $this->l('Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.'),
+            'description' => $this->l('Revers.io is the leading solution for Returns Management in Europe. By automating and centralizing the return process, the platform optimizes the after-sales customer experience and allows merchants to save time and money.'),
             'fields' =>    array(
                 Config::TEST_MODE_SETTING => array(
                     'title' => $this->l('Revers.io test mode'),
@@ -136,7 +136,7 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
         return [
             'title' =>    $this->l('ORDER SETTINGS'),
             'icon' =>     'icon-cogs',
-            'description' => $this->l('This settings define the moment when your Customer will be able to proceed to returns. Until then the Returns section on the Order page won\'t be visible. Usually, sellers allow returns once the product was shipped.'),
+            'description' => $this->l('This setting defines the moment when your Customer will be able to proceed to returns. Until then the Returns section on the Order page won\'t be visible. Tip: usually, sellers allow returns once the product was shipped.'),
             'fields' =>    array(
                 Config::ORDERS_STATUS => array(
                     'title' => $this->l('Only orders with selected statuses will be allowed for returns'),
@@ -147,7 +147,7 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
                     'class' => 'col-lg-12'
                 ),
                 Config::ORDER_DATE_FROM => array(
-                    'title' => $this->l('Synchronise orders with Revers.io between dates'),
+                    'title' => $this->l('Synchronize orders with Revers.io between '),
                     'type' => 'order_date_from_to',
                 ),
                 Config::ORDERS_IMPORT_PROGRESS => array(
@@ -192,7 +192,7 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
                     'class' => 'fixed-width-lg',
                     'cast' => 'intval',
                     'suffix' => 'days',
-                    'desc' => $this->l('Input 0 to not store logs'),
+                    'desc' => $this->l('Input 0 to store logs indefinitely'),
                 ),
                 'REVERSIODownload' => array(
                     'title' => '',
