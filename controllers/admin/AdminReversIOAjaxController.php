@@ -98,7 +98,7 @@ class AdminReversIOAjaxController extends ReversIOAbstractAdminController
             }
             $this->ajaxRender(json_encode($reversIoOrderImportResponse));
         } catch (Exception $e) {
-            $this->ajaxRender(json_encode($reversIoOrderImportResponse));
+            $this->ajaxRender(json_encode(['success' => false]));
         }
     }
 

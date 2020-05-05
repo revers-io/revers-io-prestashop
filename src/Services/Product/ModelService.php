@@ -31,6 +31,7 @@ namespace ReversIO\Services\Product;
 use Context;
 use Product;
 use ReversIO;
+use ReversIO\Repository\ExportedProductsRepository;
 use ReversIO\Repository\OrderRepository;
 use ReversIO\Repository\ProductsForExportRepository;
 use ReversIO\Response\ReversIoResponse;
@@ -59,18 +60,23 @@ class ModelService
     /** @var Cache */
     private $cache;
 
+    /** @var ExportedProductsRepository */
+    private $exportedProductsRepository;
+
     public function __construct(
         ReversIO $module,
         OrderRepository $orderRepository,
         ProductsForExportRepository $productsExportRepository,
         ReversIOApi $reversIoApiConnect,
-        Cache $cache
+        Cache $cache,
+        ExportedProductsRepository $exportedProductsRepository
     ) {
         $this->module = $module;
         $this->orderRepository = $orderRepository;
         $this->productsExportRepository = $productsExportRepository;
         $this->reversIoApiConnect = $reversIoApiConnect;
         $this->cache = $cache;
+        $this->exportedProductsRepository = $exportedProductsRepository;
     }
 
     public function getModelsIds($orderId, $currency)
@@ -112,10 +118,13 @@ class ModelService
             return $listModelsResponse;
         }
 
-        $modelIdResponse = $this->getProductModelIdIfAlreadyExported($productId, $listModelsResponse);
+        $modelIdResponse = new ReversIoResponse();
+
+        $exportedProductId = $this->exportedProductsRepository->isProductExported($productId);
+
 
 //        If $modelIdResponse is not successful, product not exported
-        if (!$modelIdResponse->isSuccess()) {
+        if ($exportedProductId === null) {
             $modelIdResponse = $this->reversIoApiConnect->putProduct($productId, Context::getContext()->language->id);
 
             $this->cache->updateModelList();
@@ -123,9 +132,11 @@ class ModelService
             $productAddedForUpdate = $this->productsExportRepository->getProductForUpdateById($productId);
 
             if ($productAddedForUpdate) {
+                $exportedProduct = new ReversIO\Entity\ExportedProduct($exportedProductId);
+
                 $modelIdResponse = $this->reversIoApiConnect->updateProduct(
                     $productId,
-                    $modelIdResponse->getContent(),
+                    $exportedProduct->reversio_product_id,
                     Context::getContext()->language->id
                 );
 

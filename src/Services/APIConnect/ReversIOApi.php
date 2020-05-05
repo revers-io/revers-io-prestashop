@@ -281,7 +281,10 @@ class ReversIOApi
 
             $request = $this->proxyApiClient->put($url, $requestHeadersAndBody);
 
-            $this->exportedProductsRepository->insertExportedProducts($productId);
+            $this->exportedProductsRepository->insertExportedProducts(
+                $productId,
+                $request->getContent()['value']['id']
+            );
 
             $this->productsExportRepository->deleteFromProductsForExport($productId);
 
@@ -396,12 +399,11 @@ class ReversIOApi
                     $orderBody['orderReference'],
                     $errorMessage
                 );
-
-                $this->orderRepository->insertOrdersByState(
-                    $orderBody['orderReference'],
-                    Config::SYNCHRONIZED_UNSUCCESSFULLY_ORDERS_STATUS
-                );
             }
+            $this->orderRepository->insertOrdersByState(
+                $orderBody['orderReference'],
+                Config::SYNCHRONIZED_UNSUCCESSFULLY_ORDERS_STATUS
+            );
             $response->setSuccess(false);
             $response->setMessage($errorMessage);
         }
