@@ -39,9 +39,7 @@
 
         <div class="table-responsive-row clearfix">
             <div class="category-map-container accordion js-category-container">
-                {foreach $categoryTree as $category}
-                    {include file='./partials/category-mapping-part.tpl' category=$category}
-                {/foreach}
+                {include file='./partials/category-mapping-part.tpl' category=$rootCategory}
             </div>
         </div>
 

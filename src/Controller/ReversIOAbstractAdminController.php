@@ -55,6 +55,7 @@ class ReversIOAbstractAdminController extends ModuleAdminController
     public function init()
     {
         if ($this->ajax) {
+            parent::init();
             return;
         }
 

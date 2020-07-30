@@ -57,6 +57,48 @@ class CategoryMapService
         return $categoryTree;
     }
 
+    public function getRootCategory($idLang, $shop, $mappedCategories)
+    {
+        $category = Category::getRootCategory($idLang, $shop);
+
+        $children = Category::getChildren($category->id, $idLang);
+
+        $rootCategoryArray = [
+            'id_category' => $category->id,
+            'name' => $category->name,
+            'link_rewrite' => $category->link_rewrite,
+            'modelType' => isset($mappedCategories[$category->id]) ?
+                $mappedCategories[$category->id] :
+                0
+        ];
+
+        if (isset($children)) {
+            $rootCategoryArray['children'] = true;
+        }
+
+        return $rootCategoryArray;
+    }
+
+    public function getChildrenCategory($category, $idLang, $mappedCategories)
+    {
+        $children = Category::getChildren($category['id_category'], $idLang);
+
+        $rootCategoryArray = [
+            'id_category' => $category['id_category'],
+            'name' => $category['name'],
+            'link_rewrite' => $category['link_rewrite'],
+            'modelType' => isset($mappedCategories[$category['id_category']]) ?
+                $mappedCategories[$category['id_category']] :
+                0
+        ];
+
+        if (!empty($children)) {
+            $rootCategoryArray['children'] = true;
+        }
+
+        return $rootCategoryArray;
+    }
+
     public function formatModelTypes($modelTypes)
     {
         $formatedModelTyped = [];

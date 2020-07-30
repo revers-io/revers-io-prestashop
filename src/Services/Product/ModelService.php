@@ -109,7 +109,6 @@ class ModelService
         return $modelIdArray;
     }
 
-    //@todo check the naming, kad butu aisku, kad sukurs ar updatins ir comment for the  function return
     private function getProductModelId($productId)
     {
         $listModelsResponse = $this->cache->getListModels();
@@ -146,7 +145,6 @@ class ModelService
 
         return $modelIdResponse;
     }
-    //@todo STANISLOVAI PERVADINK
     private function getProductModelIdIfAlreadyExported($productId, $listModelsResponse)
     {
         $modelId = 0;
@@ -154,7 +152,6 @@ class ModelService
         $product = new Product($productId);
         $reference = $product->reference;
 
-        //@todo: create the Object for the api values setters and getters
         foreach ($listModelsResponse->getContent()['value'] as $listModel) {
             if (isset($listModel['sku'])) {
                 if ($listModel['sku'] == $reference) {
@@ -165,8 +162,6 @@ class ModelService
             }
         }
 
-        //@todo: change this response for the exception and later catch the exception and in catch
-        // block put the product api
         $response = new ReversIoResponse();
 
         if ($modelId) {

@@ -136,7 +136,7 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
         return [
             'title' =>    $this->l('ORDER SETTINGS'),
             'icon' =>     'icon-cogs',
-            'description' => $this->l('This setting defines the moment when your Customer will be able to proceed to returns. Until then the Returns section on the Order page won\'t be visible. Tip: usually, sellers allow returns once the product was shipped.'),
+            'description' => $this->l('This setting defines the moment when your Customer will be able to proceed to returns. Until then the Returns section on the Order page won\'t be visible . Tip: usually, sellers allow returns once the product was shipped.'),
             'fields' =>    array(
                 Config::ORDERS_STATUS => array(
                     'title' => $this->l('Only orders with selected statuses will be allowed for returns'),
@@ -147,7 +147,7 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
                     'class' => 'col-lg-12'
                 ),
                 Config::ORDER_DATE_FROM => array(
-                    'title' => $this->l('Synchronize orders with Revers.io between '),
+                    'title' => $this->l('Synchronize orders with Revers.io between dates'),
                     'type' => 'order_date_from_to',
                 ),
                 Config::ORDERS_IMPORT_PROGRESS => array(
