@@ -26,6 +26,7 @@
  * @see       /LICENSE
  */
 
+use ReversIO\Config\Config;
 use ReversIO\Controller\ReversIOAbstractAdminController;
 
 class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminController
@@ -45,8 +46,12 @@ class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminContro
     {
         parent::setMedia($isNewTheme);
 
+        Media::addJsDef(array(
+            'categoryDisplayAjax' => $this->context->link->getAdminLink(Config::CONTROLLER_ADMIN_AJAX),
+        ));
+
         $this->addCSS($this->module->getLocalPath() . '/views/css/admin/category-mapping.css');
-        $this->addJS($this->module->getLocalPath() . '/views/js/admin/category-mapping.js');
+        $this->addJS($this->module->getLocalPath() . '/views/js/admin/category-map.js');
     }
 
     public function initContent()
@@ -106,6 +111,8 @@ class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminContro
         $reversIOAPIConnect = $this->module->getContainer()->get('reversIoApiConnect');
         $categoryMapRepository = $this->module->getContainer()->get('categoryMapRepository');
 
+        $rootCategory = $categoryMapService->getRootCategory($this->context->language->id, $this->context->shop, $categoryMapRepository->getAllMappedCategories());
+
         $categoryTree = $categoryMapService->getMappedCategoryTree(
             $this->context->language->id,
             $this->context->shop,
@@ -121,7 +128,13 @@ class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminContro
         $tplVars = [
             'categoryTree' => $categoryTree,
             'modelTypesList' => $modelTypesList,
+            'rootCategory' => $rootCategory,
+            'key' => 0,
         ];
+//
+//        dump($categoryTree);
+//        dump($rootCategory);
+//        die();
 
         $this->context->smarty->assign($tplVars);
 

@@ -102,6 +102,43 @@ class AdminReversIOAjaxController extends ReversIOAbstractAdminController
         }
     }
 
+    public function ajaxProcessDisplayCategories()
+    {
+        /** @var \ReversIO\Services\CategoryMapService $categoryMapService */
+        /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIOAPIConnect */
+        /** @var \ReversIO\Repository\CategoryMapRepository $categoryMapRepository */
+        $categoryMapService = $this->module->getContainer()->get('categoryMapService');
+        $reversIOAPIConnect = $this->module->getContainer()->get('reversIoApiConnect');
+        $categoryMapRepository = $this->module->getContainer()->get('categoryMapRepository');
+
+        $buildedChildrens = [];
+        $childrens = Category::getChildren(Tools::getValue('categoryId'), $this->context->language->id);
+        foreach ($childrens as $children) {
+            $buildedChildrens[] = $categoryMapService->getChildrenCategory($children, $this->context->language->id, $categoryMapRepository->getAllMappedCategories());
+        }
+
+        $modelTypesList = $reversIOAPIConnect->getModelTypes($this->context->language->iso_code);
+
+        if ($modelTypesList) {
+            $modelTypesList = $categoryMapService->formatModelTypes($modelTypesList->getContent()['value']);
+        }
+
+        $tplVars = [
+            'category' => $buildedChildrens,
+            'modelTypesList' => $modelTypesList,
+            'rootCategory' =>  $categoryMapService->getRootCategory($this->context->language->id, $this->context->shop, $categoryMapRepository->getAllMappedCategories()),
+            'current' => Tools::getValue('current'),
+        ];
+
+        $this->context->smarty->assign($tplVars);
+
+        echo $this->context->smarty->fetch(
+            $this->module->getLocalPath().'views/templates/admin/partials/children.tpl'
+        );
+
+        die();
+    }
+
     private function updateValues($orderStatus, $orderDateFrom, $orderDateTo)
     {
         Configuration::updateValue(

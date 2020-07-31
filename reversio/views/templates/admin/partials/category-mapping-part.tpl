@@ -27,7 +27,7 @@
 
 <div class="accordion-group category-map-part">
     <div class="js-accordion-heading accordion-heading heading-container">
-        <a class="js-accordion-toggle accordion-toggle category-map-heading collapsed" data-toggle="collapse" href="#{$category.link_rewrite}">
+        <a class="js-accordion-toggle accordion-toggle category-map-heading collapsed" data-toggle="collapse" href="#{$category.link_rewrite}" data-category-id="{$category.id_category}">
             {if isset($category.children)}
                 <i class="icon-circle-arrow-down"></i>
             {/if}
@@ -44,13 +44,6 @@
         </select>
     </div>
 
-    {if isset($category.children)}
-        <div id="{$category.link_rewrite}" class="js-accordion-body accordion-body collapse no-transition">
-            <div class="accordion-inner">
-                {foreach $category.children as $categoryChildren}
-                    {include file='./category-mapping-part.tpl' category=$categoryChildren}
-                {/foreach}
-            </div>
-        </div>
-    {/if}
+    <div class="reversio-category-childrens-{$category.id_category}">
+    </div>
 </div>
