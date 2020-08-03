@@ -206,7 +206,7 @@ class OrdersRequestBuilder
 
         foreach ($orders as $order) {
             $orderIds[] = [
-                'id_order' => $order['ps_order'],
+                'id_order' => $order['id_order'],
             ];
         }
 

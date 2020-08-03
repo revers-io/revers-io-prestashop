@@ -45,7 +45,7 @@ class OrderRepository
 
     public function getOrdersForImport($importStatuses, $dateFrom, $dateTo, $limit = false)
     {
-        $sql = 'SELECT '._DB_PREFIX_.'orders.`id_order` as `'._DB_PREFIX_.'order`
+        $sql = 'SELECT '._DB_PREFIX_.'orders.`id_order` as `order`
                 FROM '._DB_PREFIX_.'orders 
                 LEFT JOIN '._DB_PREFIX_.'revers_io_imported_orders ON 
                             '._DB_PREFIX_.'revers_io_imported_orders.`id_order` = '._DB_PREFIX_.'orders.`id_order`
