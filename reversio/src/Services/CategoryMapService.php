@@ -107,8 +107,6 @@ class CategoryMapService
             $formatedModelTyped[$modelType['id']] = $modelType['label'];
         }
 
-        sort($formatedModelTyped);
-
         return $formatedModelTyped;
     }
 

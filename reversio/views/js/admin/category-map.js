@@ -47,6 +47,9 @@ $(document).ready(function () {
             success: function (response) {
                 $('.reversio-category-childrens-'+categoryId).html(response);
                 $category.addClass('do-collapsed');
+                $('.model-list-select.chosen').each(function(k, item){
+                    $(item).chosen({disable_search_threshold: 10, search_contains: true, width: '100%', });
+                });
             },
             error: function (response) {
             }

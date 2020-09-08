@@ -92,7 +92,7 @@ class ModelService
 
             if (!$modelIdResponse->isSuccess()) {
                 throw new \Exception(sprintf('The order was not imported because one of the product with reference : 
-                        %s is not valid', $modelIdResponse->getMessage()['productReference']));
+                        %s product_id:%s is not valid', $modelIdResponse->getMessage()['productReference'], $productId['product_id']));
             }
 
             $modelIdArray[] =
@@ -114,24 +114,42 @@ class ModelService
         $listModelsResponse = $this->cache->getListModels();
 
         if (!$listModelsResponse->isSuccess()) {
+            throw new \Exception(sprintf('getListModels failed'));
             return $listModelsResponse;
         }
+
+        $modelidAlreadyExists = $this->getProductModelIdIfAlreadyExported($productId, $listModelsResponse);
 
         $modelIdResponse = new ReversIoResponse();
 
         $exportedProductId = $this->exportedProductsRepository->isProductExported($productId);
 
+        /*$modelIdResponse = $this->reversIoApiConnect->putProduct($productId, Context::getContext()->language->id);
+        $this->cache->updateModelList();
+        $modelIdResponse = $this->reversIoApiConnect->updateProduct(
+            $productId,
+            getProductModelIdIfAlreadyExported($productId, $listModelsResponse),
+            Context::getContext()->language->id
+        );
+        $this->cache->updateModelList();
+        return $modelIdResponse;*/
 
 //        If $modelIdResponse is not successful, product not exported
         if ($exportedProductId === null) {
+            
+
             $modelIdResponse = $this->reversIoApiConnect->putProduct($productId, Context::getContext()->language->id);
-
+            if (!$modelIdResponse->isSuccess()) {
+                throw new \Exception(sprintf('putProduct failed'));
+            }
             $this->cache->updateModelList();
+            
         } else {
-            $productAddedForUpdate = $this->productsExportRepository->getProductForUpdateById($productId);
+            $exportedProduct = new ReversIO\Entity\ExportedProduct($exportedProductId);
 
+            $productAddedForUpdate = $this->productsExportRepository->getProductForUpdateById($productId);
             if ($productAddedForUpdate) {
-                $exportedProduct = new ReversIO\Entity\ExportedProduct($exportedProductId);
+                
 
                 $modelIdResponse = $this->reversIoApiConnect->updateProduct(
                     $productId,
@@ -140,6 +158,9 @@ class ModelService
                 );
 
                 $this->cache->updateModelList();
+            } else {                
+                $modelIdResponse->setSuccess(true);
+                $modelIdResponse->setContent($exportedProduct->reversio_product_id);
             }
         }
 
@@ -168,6 +189,7 @@ class ModelService
             $response->setSuccess(true);
             $response->setContent($modelId);
         } else {
+            throw new \Exception(sprintf('getProductModelIdIfAlreadyExported failed: reference: %s', $reference));
             $response->setSuccess(false);
         }
 
