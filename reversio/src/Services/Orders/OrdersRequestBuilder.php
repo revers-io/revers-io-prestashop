@@ -202,11 +202,11 @@ class OrdersRequestBuilder
         $dateFrom = \Configuration::get(Config::ORDER_DATE_FROM);
         $dateTo = \Configuration::get(Config::ORDER_DATE_TO);
 
-        $orders = $this->orderRepository->getOrdersForImport($orderStatusesForImport, $limit, $dateFrom, $dateTo);
+        $orders = $this->orderRepository->getOrdersForImport($orderStatusesForImport, $dateFrom, $dateTo, $limit);
 
         foreach ($orders as $order) {
             $orderIds[] = [
-                'id_order' => $order['ps_order'],
+                'id_order' => $order[_DB_PREFIX_ . 'order'],
             ];
         }
 

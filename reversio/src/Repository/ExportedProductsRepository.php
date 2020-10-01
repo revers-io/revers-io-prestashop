@@ -64,4 +64,17 @@ class ExportedProductsRepository
 
         return Db::getInstance()->execute($sql);
     }
+
+    public function getReversioProductIdByProductId($productId)
+    {
+        $query = new DbQuery();
+
+        $query->select('reversio_product_id');
+        $query->from('revers_io_exported_products');
+        $query->where('id_product = "' . (int) $productId . '"');
+
+        $reversioProductId = Db::getInstance()->getValue($query);
+
+        return $reversioProductId ? $reversioProductId : null;
+    }
 }

@@ -121,30 +121,34 @@ class ModelService
 
         $exportedProductId = $this->exportedProductsRepository->isProductExported($productId);
 
-
-//        If $modelIdResponse is not successful, product not exported
-        if ($exportedProductId === null) {
+        if (empty($exportedProductId)) { //Product not exported. Inserting
             $modelIdResponse = $this->reversIoApiConnect->putProduct($productId, Context::getContext()->language->id);
-
             $this->cache->updateModelList();
-        } else {
-            $productAddedForUpdate = $this->productsExportRepository->getProductForUpdateById($productId);
 
-            if ($productAddedForUpdate) {
-                $exportedProduct = new ReversIO\Entity\ExportedProduct($exportedProductId);
-
-                $modelIdResponse = $this->reversIoApiConnect->updateProduct(
-                    $productId,
-                    $exportedProduct->reversio_product_id,
-                    Context::getContext()->language->id
-                );
-
-                $this->cache->updateModelList();
-            }
+            return $modelIdResponse;
         }
+
+        if ($this->productsExportRepository->getProductForUpdateById($productId)) { //Product exported. Updating
+            $exportedProduct = new ReversIO\Entity\ExportedProduct($exportedProductId);
+
+            $modelIdResponse = $this->reversIoApiConnect->updateProduct(
+                $productId,
+                $exportedProduct->reversio_product_id,
+                Context::getContext()->language->id
+            );
+            $this->cache->updateModelList();
+
+            return $modelIdResponse;
+        }
+        //Did not insert nor update but has to have success message to continue with other reversio functions.
+        $reversioProductId = $this->exportedProductsRepository->getReversioProductIdByProductId((int)$productId);
+        $modelIdResponse->setContent($reversioProductId);
+        $modelIdResponse->setSuccess(true);
+        $this->cache->updateModelList();
 
         return $modelIdResponse;
     }
+
     private function getProductModelIdIfAlreadyExported($productId, $listModelsResponse)
     {
         $modelId = 0;

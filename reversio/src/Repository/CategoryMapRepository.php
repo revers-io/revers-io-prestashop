@@ -52,9 +52,16 @@ class CategoryMapRepository
         return $result;
     }
 
-    public function deleteAllMappedCategories()
+    public function deleteMappedCategories(array $categoryIds)
     {
-        $sql = 'DELETE FROM '._DB_PREFIX_.'revers_io_category_map';
+        if (empty($categoryIds)) {
+            return false;
+        }
+
+        $categoryIdsEscaped = array_map('intval', $categoryIds);
+
+        $sql = 'DELETE FROM '._DB_PREFIX_.'revers_io_category_map 
+                WHERE id_category IN ('.implode(',', $categoryIdsEscaped).')';
 
         return Db::getInstance()->execute($sql);
     }

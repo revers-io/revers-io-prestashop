@@ -528,7 +528,7 @@ class ReversIOApi
             $request = $this->proxyApiClient->put($url, $requestHeadersAndBody);
 
             $response->setSuccess(true);
-            $response->setContent($request);
+            $response->setContent($request->getContent());
         } catch (\GuzzleHttp\Exception\ClientException $exception) {
             $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
 
