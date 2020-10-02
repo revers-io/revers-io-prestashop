@@ -117,15 +117,23 @@ class ModelService
             return $listModelsResponse;
         }
 
+        $existingModelIdInReversIOResponse = $this->getProductModelIdIfAlreadyExported($productId, $listModelsResponse);
+
         $modelIdResponse = new ReversIoResponse();
 
         $exportedProductId = $this->exportedProductsRepository->isProductExported($productId);
 
-        if (empty($exportedProductId)) { //Product not exported. Inserting
+        if (empty($exportedProductId) && !$existingModelIdInReversIOResponse->isSuccess()) { //Product not exported. Inserting
             $modelIdResponse = $this->reversIoApiConnect->putProduct($productId, Context::getContext()->language->id);
             $this->cache->updateModelList();
 
             return $modelIdResponse;
+        } else if (empty($exportedProductId)) {
+            // Not exported by prestashop, just map it to exportedProducts map
+            $this->exportedProductsRepository->insertExportedProducts(
+                $productId,
+                $existingModelIdInReversIOResponse->getContent()
+            );
         }
 
         if ($this->productsExportRepository->getProductForUpdateById($productId)) { //Product exported. Updating
