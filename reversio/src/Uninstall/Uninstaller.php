@@ -72,6 +72,7 @@ class Uninstaller
                 && Configuration::deleteByName(Config::ORDERS_STATUS)
                 && Configuration::deleteByName(Config::ENABLE_LOGGING_SETTING)
                 && Configuration::deleteByName(Config::STORE_LOGS)
+                && Configuration::deleteByName(Config::DEFAULT_DIMENSIONS)
                 && Configuration::deleteByName(Config::BRAND_INIT_EXPORT)
                 && Configuration::deleteByName(Config::PRODUCT_INIT_EXPORT);
     }

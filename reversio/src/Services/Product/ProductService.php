@@ -48,7 +48,8 @@ class ProductService
         $productIdForInsert,
         $language,
         $allMappedCategories,
-        $categoriesAndParentsIds
+        $categoriesAndParentsIds,
+        $useDefaultDimensions
     ) {
         $product = new Product($productIdForInsert);
 
@@ -69,6 +70,21 @@ class ProductService
             );
         }
 
+        $weight = (float)$product->weight;
+        $length = (int) round($product->depth);
+        $width = (int) round($product->width);
+        $height = (int) round($product->height);
+        if ($useDefaultDimensions === "1") {
+            if ($weight <= 0)
+                $weight = 0.1;
+            if ($length <= 0)
+                $length = 5;
+            if ($width <= 0)
+                $width = 5;
+            if ($height <= 0)
+                $height = 5;
+        }
+
         $productInfoArray = [
             "brandId" => $brandId,
             "modelTypeId" => $categoryId,
@@ -78,9 +94,9 @@ class ProductService
                 $product->ean13,
             ],
             "dimension" => [
-                "lengthInCm" => (int) round($product->depth),
-                "widthInCm" => (int) round($product->width),
-                "heightInCm" => (int) round($product->height),
+                "lengthInCm" => $length,
+                "widthInCm" => $width,
+                "heightInCm" => $height,
             ],
             "photoUrl" => $imageUrl,
             "additionalInformation" => [
@@ -92,15 +108,15 @@ class ProductService
                 "isCumbersome" => false
             ],
             "state" => 'new',
-            "weight" => (float)$product->weight,
-            "isLowValue" => true,
+            "weight" => $weight,
+            "isLowValue" => false,
             "id_product" => $product->id,
         ];
 
         return $productInfoArray;
     }
 
-    public function getInfoAboutProductForUpdate($productIdForUpdate, $modelId, $languageId)
+    public function getInfoAboutProductForUpdate($productIdForUpdate, $modelId, $languageId, $useDefaultDimensions)
     {
         $product = new Product($productIdForUpdate);
 
@@ -115,15 +131,30 @@ class ProductService
             );
         }
 
+        $weight = (float)$product->weight;
+        $length = (int) round($product->depth);
+        $width = (int) round($product->width);
+        $height = (int) round($product->height);
+        if ($useDefaultDimensions === "1") {
+            if ($weight <= 0)
+                $weight = 0.1;
+            if ($length <= 0)
+                $length = 5;
+            if ($width <= 0)
+                $width = 5;
+            if ($height <= 0)
+                $height = 5;
+        }
+
         $productUpdateInfoArray = [
             "sKU" => $product->reference,
             "eANs" => [
                 $product->ean13,
             ],
             "dimension" => [
-                "lengthInCm" => (int) round($product->depth),
-                "widthInCm" => (int) round($product->width),
-                "heightInCm" => (int) round($product->height),
+                "lengthInCm" => $length,
+                "widthInCm" => $width,
+                "heightInCm" => $height,
             ],
 
             "photoUrl" => $imageUrl,
@@ -136,7 +167,7 @@ class ProductService
                 "isCumbersome" => false
             ],
             "state" => 'new',
-            "weight" => (float)$product->weight,
+            "weight" => $weight,
             "id_product" => $product->id,
             "modelId" => $modelId,
             'name' => $product->name[$languageId],

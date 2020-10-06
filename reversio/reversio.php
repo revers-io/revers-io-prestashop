@@ -40,7 +40,7 @@ class ReversIO extends Module
     public function __construct()
     {
         $this->name = $this->l('reversio');
-        $this->version = '1.0.0';
+        $this->version = '1.2.0';
         $this->tab = 'shipping_logistics';
         $this->author = 'Revers.io';
         $this->need_instance = 0;
@@ -152,8 +152,13 @@ class ReversIO extends Module
         /** @var \ReversIO\Repository\OrdersListingRepository $ordersListingRepository */
         $ordersListingRepository = $this->getContainer()->get('ordersListingRepository');
 
-        $params['select'] .= $ordersListingRepository->selectReversValues();
-        $params['join'] .= $ordersListingRepository->joinReversTables($this->context->language->id);
+        if (isset($params['select'])) {
+            $params['select'] .= $ordersListingRepository->selectReversValues();
+        }
+
+        if (isset($params['join'])) {
+            $params['join'] .= $ordersListingRepository->joinReversTables($this->context->language->id);
+        }
 
         $res = array_slice($params['fields'], 0, 8, true) +
             $listFields +
@@ -253,10 +258,6 @@ class ReversIO extends Module
                 return $this->display(__FILE__, 'views/templates/hook/display-order-detail.tpl');
             }
 
-            if (!$orderReturnInformation['isOpenForClaims']) {
-                return $this->display(__FILE__, 'views/templates/hook/display-order-disable-button.tpl');
-            }
-
             if ($orderReturnInformation['hasOpenFile'] &&
                 !empty($orderReturnInformation['openFiles']) && $reversIoLink
             ) {
@@ -265,6 +266,10 @@ class ReversIO extends Module
                 ));
 
                 return $this->display(__FILE__, 'views/templates/hook/display-order-return.tpl');
+            }
+
+            if (!$orderReturnInformation['isOpenForClaims']) {
+                return $this->display(__FILE__, 'views/templates/hook/display-order-disable-button.tpl');
             }
 
             return $this->display(__FILE__, 'views/templates/hook/display-order-import-failed.tpl');

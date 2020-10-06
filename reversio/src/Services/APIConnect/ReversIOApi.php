@@ -264,7 +264,8 @@ class ReversIOApi
             $productIdForInsert,
             $languageId,
             $allMappedCategories,
-            $categoriesAndParentsIds
+            $categoriesAndParentsIds,
+            Configuration::get(Config::DEFAULT_DIMENSIONS)
         );
 
         $productId = $productBody['id_product'];
@@ -321,7 +322,8 @@ class ReversIOApi
         $productBody = $this->productService->getInfoAboutProductForUpdate(
             $productIdForUpdate,
             $modelId,
-            $languageId
+            $languageId,
+            Configuration::get(Config::DEFAULT_DIMENSIONS)
         );
 
         $productId = $productBody['id_product'];

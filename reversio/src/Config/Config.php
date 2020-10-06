@@ -85,9 +85,13 @@ class Config
 
     const STORE_LOGS = 'REVERS_IO_STORE_LOGS';
 
+    const DEFAULT_DIMENSIONS = 'REVERS_IO_DEFAULT_DIMENSIONS';
+
     const MAIN_SETTINGS_FIELDS_OPTION_NAME = 'home';
 
     const ORDER_SETTINGS_FIELDS_OPTION_NAME = 'ordersettings';
+
+    const PRODUCT_SETTINGS_FIELDS_OPTION_NAME = 'productsttings';
 
     const ORDER_IMPORT_FIELDS_OPTION_NAME = 'orderimport';
 
