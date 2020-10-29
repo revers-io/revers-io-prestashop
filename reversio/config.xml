@@ -2,7 +2,7 @@
 <module>
     <name>reversio</name>
     <displayName><![CDATA[Revers.io]]></displayName>
-    <version><![CDATA[1.0.0]]></version>
+    <version><![CDATA[1.2.1]]></version>
     <description><![CDATA[Revers.io]]></description>
     <author><![CDATA[Revers.io]]></author>
     <tab><![CDATA[shipping_logistics]]></tab>

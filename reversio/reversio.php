@@ -40,7 +40,7 @@ class ReversIO extends Module
     public function __construct()
     {
         $this->name = $this->l('reversio');
-        $this->version = '1.2.0';
+        $this->version = '1.2.1';
         $this->tab = 'shipping_logistics';
         $this->author = 'Revers.io';
         $this->need_instance = 0;
