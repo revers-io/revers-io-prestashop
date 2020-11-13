@@ -97,7 +97,7 @@ class ModelService
                         %s is not valid', $modelIdResponse->getMessage()['productReference']));
             }
 
-            $unitPaidPrice = $orderProductDetail['total_price_tax_incl'] / $quantity;
+            $unitPaidPrice = $orderProductDetail['total_price_tax_incl'] / (float) $quantity;
             for ($i = 0; $i < $quantity; $i++) {
             $modelIdArray[] =
                 [
@@ -106,7 +106,7 @@ class ModelService
                             'amount' => $unitPaidPrice,
                         'currency' => $currency,
                     ],
-                    'orderLineReference' => $orderObject->reference,
+                    'orderLineReference' => $i,
                 ];
             }
         }
