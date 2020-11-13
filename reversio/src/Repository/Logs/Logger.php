@@ -55,6 +55,11 @@ class Logger
         $this->brandRepository = $brandRepository;
     }
 
+    public function getProductReference($productId)
+    {
+        return $this->productRepository->getProductReferenceById($productId);
+    }
+
     public function insertOrderLogs($reference, $message)
     {
         $now = new DateTime();
@@ -74,7 +79,7 @@ class Logger
     public function insertProductLogs($productId, $name, $message)
     {
         $now = new DateTime();
-        $reference = $this->productRepository->getProductReferenceById($productId);
+        $reference = $this->getProductReference($productId);
         $sql = 'INSERT 
                   INTO ' . _DB_PREFIX_ . 'revers_io_logs 
                             (error_log_identifier, type, name, reference, message, created_date) 

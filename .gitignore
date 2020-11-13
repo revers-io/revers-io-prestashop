@@ -2,3 +2,4 @@ node_modules/*
 img/*
 .idea
 var
+*.zip

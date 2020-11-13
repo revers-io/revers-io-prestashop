@@ -75,21 +75,25 @@ class ProductService
         $width = (int) round($product->width);
         $height = (int) round($product->height);
         if ($useDefaultDimensions === "1") {
-            if ($weight <= 0)
+            if ($weight <= 0.01) {
                 $weight = 0.1;
-            if ($length <= 0)
+            }
+            if ($length <= 0) {
                 $length = 5;
-            if ($width <= 0)
+            }
+            if ($width <= 0) {
                 $width = 5;
-            if ($height <= 0)
+            }
+            if ($height <= 0) {
                 $height = 5;
+        	}
         }
 
         $productInfoArray = [
             "brandId" => $brandId,
             "modelTypeId" => $categoryId,
             "sKU" => $product->reference,
-            "label" => $product->name[$language],
+            "label" => $product->name[$language] . " ({$product->reference})",
             "eANs" => [
                 $product->ean13,
             ],
@@ -136,14 +140,18 @@ class ProductService
         $width = (int) round($product->width);
         $height = (int) round($product->height);
         if ($useDefaultDimensions === "1") {
-            if ($weight <= 0)
+            if ($weight <= 0.01) {
                 $weight = 0.1;
-            if ($length <= 0)
+            }
+            if ($length <= 0) {
                 $length = 5;
-            if ($width <= 0)
+            }
+            if ($width <= 0) {
                 $width = 5;
-            if ($height <= 0)
+            }
+            if ($height <= 0) {
                 $height = 5;
+        	}
         }
 
         $productUpdateInfoArray = [
@@ -170,7 +178,7 @@ class ProductService
             "weight" => $weight,
             "id_product" => $product->id,
             "modelId" => $modelId,
-            'name' => $product->name[$languageId],
+            'name' => $product->name[$languageId] . "({$product->reference})",
         ];
 
         return $productUpdateInfoArray;

@@ -81,29 +81,34 @@ class ModelService
 
     public function getModelsIds($orderId, $currency)
     {
-        $productsId = $this->orderRepository->getOrderedProductId($orderId);
+        $orderProductDetails = $this->orderRepository->getOrderProductDetails($orderId);
         $orderObject = new \Order($orderId);
         $modelIdArray = [];
 
-        foreach ($productsId as $productId) {
-            $modelIdResponse = $this->getProductModelId($productId['product_id']);
+        foreach ($orderProductDetails as $orderProductDetail) {
+            $quantity = $orderProductDetail['product_quantity'];
+            if ($quantity < 1) {
+                continue;
+            }
 
-            $product = new Product($productId['product_id']);
-
+            $modelIdResponse = $this->getProductModelId($orderProductDetail['product_id']);
             if (!$modelIdResponse->isSuccess()) {
                 throw new \Exception(sprintf('The order was not imported because one of the product with reference : 
                         %s is not valid', $modelIdResponse->getMessage()['productReference']));
             }
 
+            $unitPaidPrice = $orderProductDetail['total_price_tax_incl'] / $quantity;
+            for ($i = 0; $i < $quantity; $i++) {
             $modelIdArray[] =
                 [
                     'modelId' => $modelIdResponse->getContent(),
                     'price' => [
-                        'amount' => $product->price,
+                            'amount' => $unitPaidPrice,
                         'currency' => $currency,
                     ],
                     'orderLineReference' => $orderObject->reference,
                 ];
+            }
         }
 
         return $modelIdArray;

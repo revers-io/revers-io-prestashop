@@ -72,7 +72,6 @@ class ExportedProductsRepository
         $query->select('reversio_product_id');
         $query->from('revers_io_exported_products');
         $query->where('id_product = "' . (int) $productId . '"');
-
         $reversioProductId = Db::getInstance()->getValue($query);
 
         return $reversioProductId ? $reversioProductId : null;

@@ -79,9 +79,9 @@ class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminContro
             $mappedCategoriesIds = $categoryMapService->formatMappedCategoriesFromPost($_POST);
 
             if (empty($mappedCategoriesIds)) {
-                $this->errors[] = $this->module->l('No category was mapped.');
+                $this->errors[] = $this->module->l('No category were mapped.');
             } elseif (!$categoryMapRepository->deleteMappedCategories(array_keys($mappedCategoriesIds))) {
-                $this->errors[] = $this->module->l('Old mapped categories was not deleted.');
+                $this->errors[] = $this->module->l('Old mapped categories were not deleted.');
             } elseif (!$categoryMapService->saveMappedCategories($mappedCategoriesIds)) {
                 $this->errors[] = $this->module->l('Failed to map categories');
             } else {

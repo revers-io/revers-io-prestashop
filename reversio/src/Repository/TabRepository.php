@@ -31,13 +31,6 @@ namespace ReversIO\Repository;
 use Db;
 use ReversIO\Config\Config;
 
-/**
- * Created by PhpStorm.
- * User: diana
- * Date: 19.6.7
- * Time: 09.11
- */
-
 class TabRepository
 {
     public function getInvisibleTabId()

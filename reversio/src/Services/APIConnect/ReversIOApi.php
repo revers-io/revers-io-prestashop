@@ -28,6 +28,7 @@
 
 namespace ReversIO\Services\APIConnect;
 
+use Exception;
 use Configuration;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
@@ -44,6 +45,7 @@ use ReversIO\Repository\ProductsForExportRepository;
 use ReversIO\Response\ReversIoResponse;
 use ReversIO\Services\Brand\BrandService;
 use ReversIO\Services\Cache\Cache;
+use ReversIO\Services\Orders\OrdersRequestBuilder;
 use ReversIO\Services\Orders\OrdersRetrieveService;
 use ReversIO\Services\Product\ProductService;
 use ReversIO\Services\Versions\Versions;
@@ -239,6 +241,11 @@ class ReversIOApi
             return $brands;
         }
 
+        $productReference = $this->logger->getProductReference($productIdForInsert);
+        if (empty($productReference)) {
+            throw new Exception('unknown product');
+        }
+
         $brandObject = $brands->getContent();
 
         $manufacturer = $this->productRepository->getManufacturerNamesByProductId($productIdForInsert);
@@ -270,7 +277,6 @@ class ReversIOApi
 
         $productId = $productBody['id_product'];
 
-        //@todo change array_pop to unset by id_product
         array_pop($productBody);
 
         try {
@@ -448,6 +454,10 @@ class ReversIOApi
         return $response;
     }
 
+    /**
+     * This function is retrieving the orders from the Revers.io
+     * https://demo-api-portal.revers.io/docs/services/revers/operations/RetrieveOrder?
+     */
     public function retrieveOrder($orderReference)
     {
         $response = new ReversIoResponse();

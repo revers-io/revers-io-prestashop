@@ -71,11 +71,11 @@ class OrderRepository
         return Db::getInstance()->getValue($sql);
     }
 
-    public function getOrderedProductId($orderId)
+    public function getOrderProductDetails($orderId)
     {
         $query = new \DbQuery();
 
-        $query->select('product_id');
+        $query->select('product_id, product_quantity, total_price_tax_incl');
         $query->from('order_detail');
         $query->where('id_order = '.(int)$orderId);
 

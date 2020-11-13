@@ -110,7 +110,8 @@ class ReversIOAbstractAdminController extends ModuleAdminController
 
         foreach ($moduleTabs as $moduleTab) {
             if ($moduleTab['class_name'] === Config::CONTROLLER_INVISIBLE
-                || $moduleTab['class_name'] === Config::CONTROLLER_EXPORT_LOGS) {
+                || $moduleTab['class_name'] === Config::CONTROLLER_EXPORT_LOGS ||
+                $moduleTab['class_name'] === Config::CONTROLLER_ADMIN_AJAX) {
                 continue;
             }
 
