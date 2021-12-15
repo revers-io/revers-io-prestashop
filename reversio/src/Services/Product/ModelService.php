@@ -37,6 +37,7 @@ use ReversIO\Repository\ProductsForExportRepository;
 use ReversIO\Response\ReversIoResponse;
 use ReversIO\Services\APIConnect\ReversIOApi;
 use ReversIO\Services\Cache\Cache;
+use ReversIO\Services\Product\ProductService;
 
 class ModelService
 {
@@ -60,6 +61,9 @@ class ModelService
     /** @var Cache */
     private $cache;
 
+    /** @var ProductService */
+    private $productService;
+
     /** @var ExportedProductsRepository */
     private $exportedProductsRepository;
 
@@ -69,7 +73,8 @@ class ModelService
         ProductsForExportRepository $productsExportRepository,
         ReversIOApi $reversIoApiConnect,
         Cache $cache,
-        ExportedProductsRepository $exportedProductsRepository
+        ExportedProductsRepository $exportedProductsRepository,
+        ProductService $productService
     ) {
         $this->module = $module;
         $this->orderRepository = $orderRepository;
@@ -77,101 +82,99 @@ class ModelService
         $this->reversIoApiConnect = $reversIoApiConnect;
         $this->cache = $cache;
         $this->exportedProductsRepository = $exportedProductsRepository;
+        $this->productService = $productService;
     }
 
     public function getModelsIds($orderId, $currency)
     {
         $orderProductDetails = $this->orderRepository->getOrderProductDetails($orderId);
-        $orderObject = new \Order($orderId);
         $modelIdArray = [];
 
         foreach ($orderProductDetails as $orderProductDetail) {
+            $id_order_detail = $orderProductDetail['id_order_detail'];
             $quantity = $orderProductDetail['product_quantity'];
-            if ($quantity < 1) {
+            $quantityRefunded = $orderProductDetail['product_quantity_refunded'];
+            $quantityReturned = $orderProductDetail['product_quantity_return'];
+            $returnableQuantity = $quantity - $quantityRefunded - $quantityReturned;
+
+            if($quantity < 1 || $returnableQuantity < 1) {
                 continue;
             }
 
-            $modelIdResponse = $this->getProductModelId($orderProductDetail['product_id']);
+            $unitPaidPrice = $orderProductDetail['total_price_tax_incl'] / (float) $quantity;
+
+            if ( $unitPaidPrice <= 0 ) {
+                continue;
+            }
+
+            $modelIdResponse = $this->getProductModelId($orderProductDetail);
             if (!$modelIdResponse->isSuccess()) {
                 throw new \Exception(sprintf('The order was not imported because one of the product with reference : 
                         %s is not valid', $modelIdResponse->getMessage()['productReference']));
             }
 
-            $unitPaidPrice = $orderProductDetail['total_price_tax_incl'] / (float) $quantity;
-            for ($i = 0; $i < $quantity; $i++) {
-            $modelIdArray[] =
-                [
-                    'modelId' => $modelIdResponse->getContent(),
-                    'price' => [
-                            'amount' => $unitPaidPrice,
-                        'currency' => $currency,
-                    ],
-                    'orderLineReference' => $i,
-                ];
+            for ($i = 0; $i < $returnableQuantity; $i++) {
+                $modelIdArray[] =
+                    [
+                        'modelId' => $modelIdResponse->getContent(),
+                        'price' => [
+                                'amount' => $unitPaidPrice,
+                            'currency' => $currency,
+                        ],
+                        'orderLineReference' => $id_order_detail . "-" . $i,
+                    ];
             }
         }
 
         return $modelIdArray;
     }
 
-    private function getProductModelId($productId)
+    private function getProductModelId($productDetail)
     {
+        $productId = $productDetail['product_id'];
+        $product = new Product($productId);
+
+        $sku = $this->productService->getSkuFromProduct($product, $productDetail);
+        
         $listModelsResponse = $this->cache->getListModels();
 
         if (!$listModelsResponse->isSuccess()) {
             return $listModelsResponse;
         }
 
-        $existingModelIdInReversIOResponse = $this->getProductModelIdIfAlreadyExported($productId, $listModelsResponse);
+        $existingModelIdInReversIOResponse = $this->getProductModelIdIfAlreadyExported($product, $listModelsResponse, $productDetail);
 
         $modelIdResponse = new ReversIoResponse();
 
-        $exportedProductId = $this->exportedProductsRepository->isProductExported($productId);
-
-        if (empty($exportedProductId) && !$existingModelIdInReversIOResponse->isSuccess()) { //Product not exported. Inserting
-            $modelIdResponse = $this->reversIoApiConnect->putProduct($productId, Context::getContext()->language->id);
+        if (!$existingModelIdInReversIOResponse->isSuccess()) { //Product not exported. Inserting
+            $modelIdResponse = $this->reversIoApiConnect->putProduct($productId, Context::getContext()->language->id, $productDetail);
             $this->cache->updateModelList();
 
             return $modelIdResponse;
-        } else if (empty($exportedProductId)) {
-            // Not exported by prestashop, just map it to exportedProducts map
-            $this->exportedProductsRepository->insertExportedProducts(
-                $productId,
-                $existingModelIdInReversIOResponse->getContent()
-            );
-        }
-
-        if ($this->productsExportRepository->getProductForUpdateById($productId)) { //Product exported. Updating
-            $exportedProduct = new ReversIO\Entity\ExportedProduct($exportedProductId);
+        } 
+        else  { //Product exported. Updating
+            $exportedModelId = $existingModelIdInReversIOResponse->getContent();
 
             $modelIdResponse = $this->reversIoApiConnect->updateProduct(
                 $productId,
-                $exportedProduct->reversio_product_id,
-                Context::getContext()->language->id
+                $exportedModelId,
+                Context::getContext()->language->id,
+                $productDetail
             );
-            $this->cache->updateModelList();
-
-            return $modelIdResponse;
         }
-        //Did not insert nor update but has to have success message to continue with other reversio functions.
-        $reversioProductId = $this->exportedProductsRepository->getReversioProductIdByProductId((int)$productId);
-        $modelIdResponse->setContent($reversioProductId);
-        $modelIdResponse->setSuccess(true);
-        $this->cache->updateModelList();
 
         return $modelIdResponse;
     }
 
-    private function getProductModelIdIfAlreadyExported($productId, $listModelsResponse)
+    private function getProductModelIdIfAlreadyExported($product, $listModelsResponse, $productDetail)
     {
         $modelId = 0;
 
-        $product = new Product($productId);
-        $reference = $product->reference;
+        $sku = $this->productService->getSkuFromProduct($product, $productDetail);
 
         foreach ($listModelsResponse->getContent()['value'] as $listModel) {
             if (isset($listModel['sku'])) {
-                if ($listModel['sku'] == $reference) {
+                if ($listModel['sku'] == $sku) {
                     $modelId = $listModel['id'];
 
                     break;

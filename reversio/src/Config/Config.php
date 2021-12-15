@@ -122,4 +122,16 @@ class Config
     const SUCCESSFULLY_IMPORTED = 1;
 
     const UNKNOWN_BRAND = 'Unknown Brand';
+
+    const DEFAULT_DIMENSION_WEIGHT = 0.1;
+
+    const DEFAULT_DIMENSION_HEIGHT = 5;
+
+    const DEFAULT_DIMENSION_LENGTH = 5;
+
+    const DEFAULT_DIMENSION_WIDTH = 5;
+
+    const USE_EAN_AS_SKU = true;
+
+    const USE_PRODUCTID_AS_SKU = true;
 }

@@ -75,7 +75,7 @@ class OrderRepository
     {
         $query = new \DbQuery();
 
-        $query->select('product_id, product_quantity, total_price_tax_incl');
+        $query->select('id_order_detail, product_id, product_name, product_quantity_refunded, product_quantity_return, product_ean13, product_reference, product_quantity, total_price_tax_incl');
         $query->from('order_detail');
         $query->where('id_order = '.(int)$orderId);
 

@@ -28,6 +28,7 @@
 
 namespace ReversIO\Services\Product;
 
+use Configuration;
 use Context;
 use Manufacturer;
 use Product;
@@ -43,13 +44,54 @@ class ProductService
         $this->categoryMapService = $categoryMapService;
     }
 
+    public function getSkuFromProduct($product, $productDetail) {
+
+        // By default we use product reference
+        $sku = "$product->reference";
+
+        // But if not valued correctly, a customer can choose to use the product id
+        if (Config::USE_PRODUCTID_AS_SKU) {
+            $sku = "$product->id";
+        }
+
+        // Or better, use ean13 as the SKU
+        if (Config::USE_EAN_AS_SKU) {
+            $ean13 = "{$this->getEanFromProduct($product, $productDetail)}";
+            if (!empty($ean13))
+                $sku = "$ean13";
+        }
+
+        return $sku;       
+    }
+    
+    public function getEanFromProduct($product, $productDetail) {
+        $ean13OnProduct = "{$product->ean13}";
+        $eanOnOrderDetail = "{$productDetail['product_ean13']}";
+
+        $ean13 = $ean13OnProduct;
+        if (!empty($eanOnOrderDetail))
+            $ean13 = $eanOnOrderDetail;
+
+        return $ean13;
+    }
+
+    public function getLabelFromProduct($product, $language, $productDetail) {
+        $sku = $this->getSkuFromProduct($product, $productDetail);
+        $label = $product->name[$language] . " ({$sku})";
+        $productName = $productDetail['product_name'];
+        if (!empty($productName)) {
+            $label = $productName . " ({$sku})";
+        }
+        return $label;
+    }
+
     public function getInfoAboutProduct(
         $brandId,
         $productIdForInsert,
         $language,
         $allMappedCategories,
         $categoriesAndParentsIds,
-        $useDefaultDimensions
+        $productOrderDetail
     ) {
         $product = new Product($productIdForInsert);
 
@@ -74,28 +116,31 @@ class ProductService
         $length = (int) round($product->depth);
         $width = (int) round($product->width);
         $height = (int) round($product->height);
-        if ($useDefaultDimensions === "1") {
+        if (Configuration::get(Config::DEFAULT_DIMENSIONS) === "1") {
             if ($weight <= 0.01) {
-                $weight = 0.1;
+                $weight = Config::DEFAULT_DIMENSION_WEIGHT;
             }
             if ($length <= 0) {
-                $length = 5;
+                $length = Config::DEFAULT_DIMENSION_LENGTH;
             }
             if ($width <= 0) {
-                $width = 5;
+                $width = Config::DEFAULT_DIMENSION_WIDTH;
             }
             if ($height <= 0) {
-                $height = 5;
-        	}
+                $height = Config::DEFAULT_DIMENSION_HEIGHT;
+            }
         }
+
+        $sku = $this->getSkuFromProduct($product, $productOrderDetail);
+        $label = $this->getLabelFromProduct($product, $language, $productOrderDetail);
 
         $productInfoArray = [
             "brandId" => $brandId,
             "modelTypeId" => $categoryId,
-            "sKU" => $product->reference,
-            "label" => $product->name[$language] . " ({$product->reference})",
+            "sKU" => $sku,
+            "label" => $label,
             "eANs" => [
-                $product->ean13,
+                $this->getEanFromProduct($product, $productOrderDetail),
             ],
             "dimension" => [
                 "lengthInCm" => $length,
@@ -120,17 +165,17 @@ class ProductService
         return $productInfoArray;
     }
 
-    public function getInfoAboutProductForUpdate($productIdForUpdate, $modelId, $languageId, $useDefaultDimensions)
+    public function getInfoAboutProductForUpdate($productIdForUpdate, $modelId, $language, $productOrderDetail)
     {
         $product = new Product($productIdForUpdate);
 
-        $images = $product->getImages($languageId);
+        $images = $product->getImages($language);
 
         $imageUrl = "";
 
         if (!empty($images)) {
             $imageUrl = Context::getContext()->link->getImageLink(
-                $product->link_rewrite[$languageId],
+                $product->link_rewrite[$language],
                 $images[0]['id_image']
             );
         }
@@ -139,25 +184,28 @@ class ProductService
         $length = (int) round($product->depth);
         $width = (int) round($product->width);
         $height = (int) round($product->height);
-        if ($useDefaultDimensions === "1") {
+        if (Configuration::get(Config::DEFAULT_DIMENSIONS) === '1') {
             if ($weight <= 0.01) {
-                $weight = 0.1;
+                $weight = Config::DEFAULT_DIMENSION_WEIGHT;
             }
             if ($length <= 0) {
-                $length = 5;
+                $length = Config::DEFAULT_DIMENSION_LENGTH;
             }
             if ($width <= 0) {
-                $width = 5;
+                $width = Config::DEFAULT_DIMENSION_WIDTH;
             }
             if ($height <= 0) {
-                $height = 5;
-        	}
+                $height = Config::DEFAULT_DIMENSION_HEIGHT;
+            }
         }
 
+        $sku = $this->getSkuFromProduct($product, $productOrderDetail);
+        $label = $this->getLabelFromProduct($product, $language, $productOrderDetail);
+
         $productUpdateInfoArray = [
-            "sKU" => $product->reference,
+            "sKU" => $sku,
             "eANs" => [
-                $product->ean13,
+                $this->getEanFromProduct($product, $productOrderDetail),
             ],
             "dimension" => [
                 "lengthInCm" => $length,
@@ -178,7 +226,7 @@ class ProductService
             "weight" => $weight,
             "id_product" => $product->id,
             "modelId" => $modelId,
-            'name' => $product->name[$languageId] . "({$product->reference})",
+            'name' => $label,
         ];
 
         return $productUpdateInfoArray;

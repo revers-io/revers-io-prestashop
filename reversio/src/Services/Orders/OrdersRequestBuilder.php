@@ -183,7 +183,7 @@ class OrdersRequestBuilder
                 'amount' => $orderObject->total_shipping_tax_incl,
                 'currency' => $currency->iso_code,
             ],
-            'salesChannel' => "",
+            'salesChannel' => \Configuration::get('PS_SHOP_NAME'),
         ];
 
         return $orderImportData;

@@ -39,7 +39,7 @@ class ReversIO extends Module
 
     public function __construct()
     {
-        $this->name = $this->l('reversio');
+        $this->name = 'reversio';
         $this->version = '1.2.2';
         $this->tab = 'shipping_logistics';
         $this->author = 'Revers.io';
@@ -280,21 +280,21 @@ class ReversIO extends Module
     {
         /** @var \ReversIO\Services\Product\ProductsForExportService $productForExportService */
         $productForExportService = $this->getContainer()->get('productForExportService');
-        $productForExportService->addProductForExport($params['object']->id);
+        //$productForExportService->addProductForExport($params['object']->id);
     }
 
     public function hookActionObjectProductAddAfter($params)
     {
         /** @var \ReversIO\Services\Product\ProductsForExportService $productForExportService */
         $productForExportService = $this->getContainer()->get('productForExportService');
-        $productForExportService->addProductForExport($params['object']->id);
+        //$productForExportService->addProductForExport($params['object']->id);
     }
 
     public function hookActionObjectProductDeleteAfter($params)
     {
         /** @var \ReversIO\Services\Product\ProductsForExportService $productForExportService */
         $productForExportService = $this->getContainer()->get('productForExportService');
-        $productForExportService->deleteProductFromExport($params['object']->id);
+        //$productForExportService->deleteProductFromExport($params['object']->id);
     }
 
     public function hookModuleRoutes()

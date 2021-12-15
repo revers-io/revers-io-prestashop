@@ -126,6 +126,7 @@ services:
       - '@reversIoApiConnect'
       - '@reversIoCache'
       - '@exportedProductsRepository'
+      - '@productImporter'
 
   ordersAdmin:
     class: 'ReversIO\Services\Orders\OrderListBuilder'
