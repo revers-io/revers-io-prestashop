@@ -32,6 +32,7 @@ use Configuration;
 use Db;
 use ReversIO\Services\Getters\ColourGetter;
 use ReversIO\Services\Getters\ReversIoSettingNameGetter;
+use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopConstraint;
 
 class DatabaseInstall
 {
@@ -48,9 +49,10 @@ class DatabaseInstall
     }
 
     public function createDatabaseTables()
-    {
-        return Db::getInstance()->execute('
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_logs` (
+	{
+		$queries = [];
+
+		$queries[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_logs` (
 			`id` int(6) NOT NULL AUTO_INCREMENT,
 			`error_log_identifier` int(11),
 			`type` VARCHAR(255),
@@ -59,67 +61,76 @@ class DatabaseInstall
 			`message` VARCHAR(255),
 			`created_date` DATETIME,
 			PRIMARY KEY(`id`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8;
-		
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_category_map` (
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8';
+
+		$queries[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_category_map` (
 			`id_category_map` int(6) NOT NULL AUTO_INCREMENT UNIQUE,
 			`id_category` int(11),
 			`api_category_id` VARCHAR(255),
 			PRIMARY KEY(`id_category`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8;
-		
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_imported_orders` (
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8';
+
+		$queries[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_imported_orders` (
 			`id` int(6) NOT NULL AUTO_INCREMENT,
 			`id_order` VARCHAR(255),
 			`reference` VARCHAR(255),
 			`successful` BOOLEAN,
 			PRIMARY KEY(`id`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8;
-		
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_orders_status` (
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8';
+
+		$queries[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_orders_status` (
 			`id_order_status` int(6) NOT NULL AUTO_INCREMENT,
 			`color` VARCHAR(255),
 			PRIMARY KEY(`id_order_status`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8;
-		
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_orders_status_lang` (
-			`id_order_status` int(6) NOT NULL AUTO_INCREMENT,
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8';
+
+		$queries[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_orders_status_lang` (
+			`id_order_status` int(6) NOT NULL,
 			`id_lang` int(11),
 			`name` VARCHAR(255),
 			PRIMARY KEY(`id_order_status`, `id_lang`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8;
-		
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_orders_url` (
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8';
+
+		$queries[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_orders_url` (
 			`id` int(6) NOT NULL AUTO_INCREMENT,
 			`id_order` int(11),
 			`url` VARCHAR(255),
 			PRIMARY KEY(`id`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8;
-		
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_orders` (
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8';
+
+		$queries[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_orders` (
 			`id` int(6) NOT NULL AUTO_INCREMENT,
 			`id_order` int(11),
 			`id_order_status` int(11),
 			PRIMARY KEY(`id`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8;
-		
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_products_for_export` (
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8';
+
+		$queries[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_products_for_export` (
 			`id` int(6) NOT NULL AUTO_INCREMENT UNIQUE,
-			`id_product` int(11) NOT NULL ,
+			`id_product` int(11) NOT NULL,
 			`add` BOOLEAN,
 			`update` BOOLEAN,
 			PRIMARY KEY(`id_product`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8;
-		
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_exported_products` (
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8';
+
+		$queries[] = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'revers_io_exported_products` (
 			`id` int(6) NOT NULL AUTO_INCREMENT UNIQUE,
-			`id_product` int(11) NOT NULL ,
+			`id_product` int(11) NOT NULL,
 			`reversio_product_id` VARCHAR(255),
 			`add_date` DATETIME,
 			`update_date` DATETIME,
 			PRIMARY KEY(`id_product`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8;');
-    }
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8';
+
+		foreach ($queries as $query) {
+			if (!Db::getInstance()->execute($query)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 
     public function dropReversIOTables()
     {
@@ -148,7 +159,7 @@ class DatabaseInstall
 
         foreach ($names as $name) {
             $sqlLang = 'INSERT INTO '._DB_PREFIX_.'revers_io_orders_status_lang (id_lang, name)
-                            VALUES ('.(int)Configuration::get('PS_LANG_DEFAULT').', "'.pSQL($name).'")';
+                            VALUES ('.(int)Configuration::get('PS_LANG_DEFAULT', null, ShopConstraint::allShops()).', "'.pSQL($name).'")';
 
             Db::getInstance()->execute($sqlLang);
         }

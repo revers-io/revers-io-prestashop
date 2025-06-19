@@ -1,4 +1,7 @@
 <?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+
 /**
  *Copyright (c) 2019 Revers.io
  *
@@ -28,6 +31,8 @@
 
 use ReversIO\Config\Config;
 use ReversIO\Services\Autentification\APIAuthentication;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopConstraint;
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -37,10 +42,102 @@ class ReversIO extends Module
 {
     private $moduleContainer;
 
+    public $tabs = [
+        [
+            'name' => 'Revers.io parent controller',
+            'parent_class_name' => 'AdminParentModulesSf',
+            'class_name' => Config::CONTROLLER_INVISIBLE,
+            'visible' => false,
+            'parent' => -1,
+        ],
+        [
+            'name' => 'Category mapping',
+            'parent_class_name' => Config::CONTROLLER_INVISIBLE,
+            'class_name' => Config::CONTROLLER_CATEGORY_MAPPING,
+            'module_tab' => true,
+            'parent' => Config::CONTROLLER_INVISIBLE,
+        ],
+        [
+            'name' => 'Logs',
+            'parent_class_name' => Config::CONTROLLER_INVISIBLE,
+            'class_name' => Config::CONTROLLER_LOGS,
+            'module_tab' => true,
+            'parent' => Config::CONTROLLER_INVISIBLE,
+        ],
+        [
+            'name' => 'Settings',
+            'parent_class_name' => Config::CONTROLLER_INVISIBLE,
+            'class_name' => Config::CONTROLLER_CONFIGURATION,
+            'module_tab' => true,
+            'parent' => Config::CONTROLLER_INVISIBLE,
+        ],
+        [
+            'name' => 'Export',
+            'parent_class_name' => -1,
+            'class_name' => Config::CONTROLLER_EXPORT_LOGS,
+            'module_tab' => true,
+            'visible' => false,
+            'parent' => -1
+        ],
+        [
+            'name' => 'Ajax',
+            'parent_class_name' => -1,
+            'class_name' => Config::CONTROLLER_ADMIN_AJAX,
+            'module_tab' => true,
+            'visible' => false,
+            'parent' => -1
+        ],
+    ];
+
+    protected function _installTabs()
+{
+    error_log("INSTALL TABS");
+    foreach ($this->tabs as $tabData) {
+        $tab = new Tab();
+        $tab->class_name = $tabData['class_name'];
+        $tab->module = $this->name;
+
+        // Gestion du parent
+        if (isset($tabData['parent_class_name']) && $tabData['parent_class_name'] !== -1) {
+            $id_parent = (int) Tab::getIdFromClassName($tabData['parent_class_name']);
+            if ($id_parent === 0) {
+                // Si le parent n'existe pas, on met à la racine "DEFAULT"
+                $id_parent = (int) Tab::getIdFromClassName('DEFAULT');
+            }
+            $tab->id_parent = $id_parent;
+        } else {
+            // Par défaut, on met à la racine "DEFAULT"
+            $tab->id_parent = (int) Tab::getIdFromClassName('DEFAULT');
+        }
+
+        // Visibilité
+        $tab->visible = $tabData['visible'] ?? true;
+
+        // Icone par défaut (tu peux personnaliser)
+        $tab->icon = $tabData['icon'] ?? 'settings_applications';
+
+        // Traduction du nom
+        $languages = Language::getLanguages();
+        foreach ($languages as $lang) {
+            $tab->name[$lang['id_lang']] = $this->l($tabData['name']);
+        }
+
+        // Enregistrement
+        try {
+            $tab->save();
+        } catch (Exception $e) {
+            error_log('Error installing tab: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    return true;
+}
+
     public function __construct()
     {
-        $this->name = 'reversio';
-        $this->version = '1.2.3';
+        $this->name = $this->l('reversio');
+        $this->version = '1.2.1';
         $this->tab = 'shipping_logistics';
         $this->author = 'Revers.io';
         $this->need_instance = 0;
@@ -58,7 +155,7 @@ class ReversIO extends Module
         $this->confirmUninstall = $this->l('Are you sure you want to uninstall?');
 
         if (Module::isInstalled('reversio')) {
-            $isTestModeEnabled = (bool) Configuration::get(ReversIO\Config\Config::TEST_MODE_SETTING);
+            $isTestModeEnabled = (bool) Configuration::get(ReversIO\Config\Config::TEST_MODE_SETTING,null,ShopConstraint::allShops());
             if ($isTestModeEnabled) {
                 $this->warning = $this->l('Please note: module is in test mode');
             }
@@ -70,7 +167,19 @@ class ReversIO extends Module
         /** @var \ReversIO\Install\Installer $installer */
         $installer = $this->getContainer()->get('installer');
 
-        return parent::install() && $installer->init();
+        if (!parent::install()) {
+            return false;
+        }
+
+        if (!$this->_installTabs()) {
+            return false;
+        }
+
+        if (!$installer->init()) {
+            return false;
+        }
+
+        return true;
     }
 
     public function uninstall()
@@ -85,62 +194,9 @@ class ReversIO extends Module
         Tools::redirectAdmin($this->context->link->getAdminLink(ReversIO\Config\Config::CONTROLLER_CONFIGURATION));
     }
 
-    public function getContainer()
+    public function getContainer() : ContainerInterface
     {
         return $this->moduleContainer;
-    }
-
-    /**
-     * Return array
-     */
-    public function getTabs()
-    {
-        return [
-            [
-                'name' => 'Revers.io parent controller',
-                'ParentClassName' => 'AdminParentModulesSf',
-                'class_name' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
-                'visible' => false,
-                'parent' => -1,
-            ],
-            [
-                'name' => 'Category mapping',
-                'ParentClassName' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
-                'class_name' => ReversIO\Config\Config::CONTROLLER_CATEGORY_MAPPING,
-                'module_tab' => true,
-                'parent' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
-            ],
-            [
-                'name' => 'Logs',
-                'ParentClassName' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
-                'class_name' => ReversIO\Config\Config::CONTROLLER_LOGS,
-                'module_tab' => true,
-                'parent' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
-            ],
-            [
-                'name' => 'Settings',
-                'ParentClassName' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
-                'class_name' => ReversIO\Config\Config::CONTROLLER_CONFIGURATION,
-                'module_tab' => true,
-                'parent' => ReversIO\Config\Config::CONTROLLER_INVISIBLE,
-            ],
-            [
-                'name' => 'Export',
-                'ParentClassName' => -1,
-                'class_name' => ReversIO\Config\Config::CONTROLLER_EXPORT_LOGS,
-                'module_tab' => true,
-                'visible' => false,
-                'parent' => -1
-            ],
-            [
-                'name' => 'Ajax',
-                'ParentClassName' => -1,
-                'class_name' => ReversIO\Config\Config::CONTROLLER_ADMIN_AJAX,
-                'module_tab' => true,
-                'visible' => false,
-                'parent' => -1
-            ],
-        ];
     }
 
     public function hookActionAdminOrdersListingFieldsModifier($params)
@@ -171,7 +227,7 @@ class ReversIO extends Module
     {
         Media::addJsDef(array(
             'initialOrderImportAjaxUrl' => $this->context->link->getAdminLink(
-                ReversIO\Config\Config::CONTROLLER_ADMIN_AJAX
+               Config::CONTROLLER_ADMIN_AJAX
             ),
             'token_bo' => Tools::getAdminTokenLite('AdminReversIOAjaxController'),
         ));
@@ -184,7 +240,7 @@ class ReversIO extends Module
         Media::addJsDef(array(
             'initialOrderImportAjaxUrl' => $this->context->link->getModuleLink(
                 'reversio',
-                ReversIO\Config\Config::FO_CONTROLLER
+               Config::FO_CONTROLLER
             ),
             'token' => Tools::getToken('token'),
         ));
@@ -199,8 +255,8 @@ class ReversIO extends Module
         $settingAuthentication = $this->getContainer()->get('autentification');
         $decoder = $this->getContainer()->get('reversio_decoder');
 
-        $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
-        $apiSecretKey = Configuration::get(Config::SECRET_KEY);
+        $apiPublicKey = Configuration::get(Config::PUBLIC_KEY,null,ShopConstraint::allShops());
+        $apiSecretKey = Configuration::get(Config::SECRET_KEY,null,ShopConstraint::allShops());
 
         if ($settingAuthentication->authentication($apiPublicKey, $decoder->base64Decoder($apiSecretKey))) {
             $orderId = $params['id_order'];
@@ -211,7 +267,7 @@ class ReversIO extends Module
 
             $orderStatus = $orderRepository->getOrderStatus($orderId);
 
-            if ((int) $orderStatus === ReversIO\Config\Config::CHECK_ERROR_LOG) {
+            if ((int) $orderStatus ===Config::CHECK_ERROR_LOG) {
                 $this->context->smarty->assign(array(
                     'logCreated' => $logCreated,
                     'logLink' => $this->context->link->getAdminLink(ReversIO\Config\Config::CONTROLLER_LOGS),
@@ -280,39 +336,25 @@ class ReversIO extends Module
     {
         /** @var \ReversIO\Services\Product\ProductsForExportService $productForExportService */
         $productForExportService = $this->getContainer()->get('productForExportService');
-        //$productForExportService->addProductForExport($params['object']->id);
+        $productForExportService->addProductForExport($params['object']->id);
     }
 
     public function hookActionObjectProductAddAfter($params)
     {
         /** @var \ReversIO\Services\Product\ProductsForExportService $productForExportService */
         $productForExportService = $this->getContainer()->get('productForExportService');
-        //$productForExportService->addProductForExport($params['object']->id);
+        $productForExportService->addProductForExport($params['object']->id);
     }
 
     public function hookActionObjectProductDeleteAfter($params)
     {
         /** @var \ReversIO\Services\Product\ProductsForExportService $productForExportService */
         $productForExportService = $this->getContainer()->get('productForExportService');
-        //$productForExportService->deleteProductFromExport($params['object']->id);
+        $productForExportService->deleteProductFromExport($params['object']->id);
     }
 
     public function hookModuleRoutes()
     {
-        $tabs = $this->getTabs();
-        $controllers = array();
-
-        foreach ($tabs as $tab) {
-            $controllers[] = $tab['class_name'];
-        }
-
-        if (empty($controllers)) {
-            return;
-        }
-
-        if (in_array(Tools::getValue('controller'), $controllers)) {
-            $this->requireAutoloader();
-        }
     }
 
     public function hookActionOrderStatusUpdate($params)
@@ -356,7 +398,7 @@ class ReversIO extends Module
         $containerCache = $this->getLocalPath() . 'var/cache/container.php';
         $containerConfigCache = new \Symfony\Component\Config\ConfigCache(
             $containerCache,
-            ReversIO\Config\Config::DISABLE_CACHE
+           Config::DISABLE_CACHE
         );
         $containerClass = get_class($this) . 'Container';
         if (!$containerConfigCache->isFresh()) {
