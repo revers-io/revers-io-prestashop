@@ -42,3 +42,4 @@ $_MODULE['<{reversio}prestashop>displayadminorder_936ccdb97115e9f35a11d35e3d5b5c
 $_MODULE['<{reversio}prestashop>displayadminorder_864b9e82921103338225207053f6c5fb'] = 'to go to error log.';
 $_MODULE['<{reversio}prestashop>displayorderdetail_281f5c054a5e4fdf28bf80414f5efb68'] = 'Revers.io';
 $_MODULE['<{reversio}prestashop>displayorderdetail_2a3b8df35f5ed78ad3866ba03dc2cf9c'] = 'Check status on Revers.io';
+$_MODULE['<{reversio}prestashop>follow_your_request'] = 'View Return';

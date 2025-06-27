@@ -28,10 +28,11 @@
 <section id="reversio" class="box">
     <h4>{l s='Returns' mod='reversio'}</h4>
 
-    {l s='If you want to return your product, please click on the button below. You will be forwarded to the returns platform.' mod='reversio'}
+    {l s='If you would like to track your request, please click the button below. You will be redirected to the returns platform.' mod='reversio'}
+
     <footer class="form-footer text-sm-left">
         <br>
         <input type="hidden" name="id_order" value="15">
-        <button class="btn btn-primary form-control-submi disabled">{l s='Request return' mod='reversio'}</button>
+        <a href="{$reversIoLink}" class="btn btn-primary form-control-submit">{l s='View Return' mod='reversio'}</a>
     </footer>
 </section>

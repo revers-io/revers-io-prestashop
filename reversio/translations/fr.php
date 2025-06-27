@@ -24,6 +24,8 @@ $_MODULE['<{reversio}prestashop>display-order-return_c121563ce785fbadc6f0aeaab25
 $_MODULE['<{reversio}prestashop>display-order-disable-button_4762fdc5fdf2ab3118f73fe252a6668b'] = 'Retour';
 $_MODULE['<{reversio}prestashop>display-order-disable-button_9127765d0e4daecd94e7b5cae4709504'] = 'Votre commande n\'est pas ou plus éligible à un retour';
 $_MODULE['<{reversio}prestashop>display-order-disable-button_4ddb90c979a547ef555da6f87ecdaaa5'] = 'Demander un retour';
+$_MODULE['<{reversio}prestashop>display-order-detail_9127765d0e4daecd94e7b5cae4709504'] = 'Si vous souhaitez retourner votre produit, merci de cliquer sur le bouton ci-dessous. Vous serez redirigé vers la plateforme de retour.';
+$_MODULE['<{reversio}prestashop>display-order-detail_4ddb90c979a547ef555da6f87ecdaaa5'] = 'Demander un retour';
 $_MODULE['<{reversio}prestashop>category-mapping-block_8a89650eaa727d02196c837f7e888b2f'] = 'Mapping de catégories';
 $_MODULE['<{reversio}prestashop>category-mapping-block_e2454132b4b3c02909dc8524a13ec277'] = 'Avant de pouvoir gérer vos retour avec le module Revers.io, vous devez mapper les Catégories Prestashop avec celles créées dans Revers.io';
 $_MODULE['<{reversio}prestashop>category-mapping-block_0fec5bc5bb0f9bf6b779ed89e2f41dc9'] = 'Ce mapping vous permet de proposer à votre client une liste de raisons pour leur retour et le choix de transports spécifiques à la catégorie du produit (poids, dimensions,...).';
@@ -82,3 +84,4 @@ $_MODULE['<{reversio}prestashop>adminreversiocategorymappingcontroller_96382266e
 $_MODULE['<{reversio}prestashop>adminreversiocategorymappingcontroller_33f56c620a45c8ccc312ff49b1b8688a'] = 'Les mapping précédents n\'ont pas été supprimés';
 $_MODULE['<{reversio}prestashop>adminreversiocategorymappingcontroller_765dd767aa5131b0cd421a8c25feb08e'] = 'Echec lors du mapping de catégories';
 $_MODULE['<{reversio}prestashop>adminreversiocategorymappingcontroller_cf885d424fe2c9e68e1783e19878ded7'] = 'Le mapping a réussi';
+$_MODULE['<{reversio}prestashop>follow_your_request'] = 'Suivre sa demande';

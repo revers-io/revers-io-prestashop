@@ -325,6 +325,10 @@ class ReversIO extends Module
             }
 
             if (!$orderReturnInformation['isOpenForClaims']) {
+                $this->context->smarty->assign(array(
+                    'reversIoLink' => $reversIoLink,
+                ));
+                
                 return $this->display(__FILE__, 'views/templates/hook/display-order-disable-button.tpl');
             }
 
