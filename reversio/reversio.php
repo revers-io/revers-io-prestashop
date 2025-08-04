@@ -44,10 +44,10 @@ class ReversIO extends Module
 
     public $tabs = [
         [
-            'name' => 'Revers.io parent controller',
+            'name' => 'Revers.io',
             'parent_class_name' => 'AdminParentModulesSf',
             'class_name' => Config::CONTROLLER_INVISIBLE,
-            'visible' => false,
+            'visible' => true,
             'parent' => -1,
         ],
         [
@@ -90,54 +90,53 @@ class ReversIO extends Module
     ];
 
     protected function _installTabs()
-{
-    error_log("INSTALL TABS");
-    foreach ($this->tabs as $tabData) {
-        $tab = new Tab();
-        $tab->class_name = $tabData['class_name'];
-        $tab->module = $this->name;
+    {
+        foreach ($this->tabs as $tabData) {
+            $tab = new Tab();
+            $tab->class_name = $tabData['class_name'];
+            $tab->module = $this->name;
 
-        // Gestion du parent
-        if (isset($tabData['parent_class_name']) && $tabData['parent_class_name'] !== -1) {
-            $id_parent = (int) Tab::getIdFromClassName($tabData['parent_class_name']);
-            if ($id_parent === 0) {
-                // Si le parent n'existe pas, on met à la racine "DEFAULT"
-                $id_parent = (int) Tab::getIdFromClassName('DEFAULT');
+            // Gestion du parent
+            if (isset($tabData['parent_class_name']) && $tabData['parent_class_name'] !== -1) {
+                $id_parent = (int) Tab::getIdFromClassName($tabData['parent_class_name']);
+                if ($id_parent === 0) {
+                    // Si le parent n'existe pas, on met à la racine "DEFAULT"
+                    $id_parent = (int) Tab::getIdFromClassName('DEFAULT');
+                }
+                $tab->id_parent = $id_parent;
+            } else {
+                // Par défaut, on met à la racine "DEFAULT"
+                $tab->id_parent = (int) Tab::getIdFromClassName('DEFAULT');
             }
-            $tab->id_parent = $id_parent;
-        } else {
-            // Par défaut, on met à la racine "DEFAULT"
-            $tab->id_parent = (int) Tab::getIdFromClassName('DEFAULT');
+
+            // Visibilité
+            $tab->visible = $tabData['visible'] ?? true;
+
+            // Icone par défaut (tu peux personnaliser)
+            $tab->icon = $tabData['icon'] ?? 'settings_applications';
+
+            // Traduction du nom
+            $languages = [Language::getLanguages(true, (int)Configuration::get('PS_LANG_DEFAULT'))[0]];
+            foreach ($languages as $lang) {
+                $tab->name[$lang['id_lang']] = $this->l($tabData['name']);
+            }
+
+            // Enregistrement
+            try {
+                $tab->save();
+            } catch (Exception $e) {
+                error_log('Error installing tab: ' . $e->getMessage());
+                return false;
+            }
         }
 
-        // Visibilité
-        $tab->visible = $tabData['visible'] ?? true;
-
-        // Icone par défaut (tu peux personnaliser)
-        $tab->icon = $tabData['icon'] ?? 'settings_applications';
-
-        // Traduction du nom
-        $languages = Language::getLanguages();
-        foreach ($languages as $lang) {
-            $tab->name[$lang['id_lang']] = $this->l($tabData['name']);
-        }
-
-        // Enregistrement
-        try {
-            $tab->save();
-        } catch (Exception $e) {
-            error_log('Error installing tab: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    return true;
-}
+        return true;
+    }   
 
     public function __construct()
     {
         $this->name = $this->l('reversio');
-        $this->version = '1.2.1';
+        $this->version = '1.3.0';
         $this->tab = 'shipping_logistics';
         $this->author = 'Revers.io';
         $this->need_instance = 0;
