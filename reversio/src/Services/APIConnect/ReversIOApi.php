@@ -547,4 +547,55 @@ class ReversIOApi
 
         return $response;
     }
+
+    public function putOwner($ownerBody)
+    {
+        $response = new ReversIoResponse();
+
+        try {
+
+            $owner = [
+                "externalId" => $ownerBody['id_customer'],
+                "email" => $ownerBody['email'],
+                "firstname" => $ownerBody['firstname'],
+                "lastname" => $ownerBody['lastname'],
+                "phone" => $ownerBody['phone_mobile'],
+                "address" => [
+                    "address" => $ownerBody['address1'],
+                    "additionalAddress" => $ownerBody['address2'],
+                    "postalCode" => $ownerBody['postcode'],
+                    "city" => $ownerBody['city'],
+                    "countryCode" => $ownerBody['country_iso']
+                ],
+                "loyaltyCards" => [
+                    ["loyaltyCardReference" => $ownerBody['id_customer'],"loyaltyProgramName" => $ownerBody['group_name']]
+                ]
+            ];
+
+            $url = 'owner/owners';
+            $requestHeadersAndBody = [
+                'headers' => $this->apiHeadersBuilder->buildHeadersForPutAndPost(),
+                'body' => json_encode($owner),
+            ];
+
+            $request = $this->proxyApiClient->put($url, $requestHeadersAndBody);
+
+            $response->setSuccess(true);
+            $response->setContent($request->getContent());
+        } catch (\GuzzleHttp\Exception\ClientException $exception) {
+            $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+
+            if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
+                $this->logger->insertOrderLogs(
+                    $owner['externalId'],
+                    $errorMessage
+                );
+            }
+
+            $response->setSuccess(false);
+            $response->setMessage($errorMessage);
+        }
+
+        return $response;
+    }
 }

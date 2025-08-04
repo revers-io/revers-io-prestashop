@@ -34,14 +34,20 @@ use Manufacturer;
 use Product;
 use ReversIO\Config\Config;
 use ReversIO\Services\CategoryMapService;
+use ReversIO\Repository\ProductRepository;
 
 class ProductService
 {
     /** @var CategoryMapService */
     private $categoryMapService;
-    public function __construct(CategoryMapService $categoryMapService)
+
+    /** @var ProductRepository */
+    private $productRepository;
+
+    public function __construct(CategoryMapService $categoryMapService,ProductRepository $productRepository)
     {
         $this->categoryMapService = $categoryMapService;
+        $this->productRepository = $productRepository;
     }
 
     public function getSkuFromProduct($product, $productDetail) {
@@ -149,7 +155,7 @@ class ProductService
             ],
             "photoUrl" => $imageUrl,
             "additionalInformation" => [
-                "isReturnable" => true,
+                "isReturnable" => $this->isProductReturnable($productId),
                 "isRepairable" => true,
                 "isTransportable" => true,
                 "isSerializable" => false,
@@ -163,6 +169,10 @@ class ProductService
         ];
 
         return $productInfoArray;
+    }
+
+    public function isProductReturnable($productId){
+        return $this->productRepository->isProductReturnable($productId);
     }
 
     public function getInfoAboutProductForUpdate($productIdForUpdate, $modelId, $language, $productOrderDetail)
@@ -215,7 +225,7 @@ class ProductService
 
             "photoUrl" => $imageUrl,
             "additionalInformation" => [
-                "isReturnable" => true,
+                "isReturnable" => $this->isProductReturnable($productId),
                 "isRepairable" => true,
                 "isTransportable" => true,
                 "isSerializable" => false,

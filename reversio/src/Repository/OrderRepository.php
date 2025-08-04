@@ -43,6 +43,36 @@ class OrderRepository
         $this->colourGetter = $colourGetter;
     }
 
+    public function getCustomerByOrderId($orderId)
+    {
+        $orderId = (int) $orderId;
+
+        $sql = 'SELECT 
+                c.*,
+                g.name AS group_name
+            FROM '._DB_PREFIX_.'orders o
+            JOIN '._DB_PREFIX_.'customer c ON o.id_customer = c.id_customer
+            JOIN '._DB_PREFIX_.'group_lang g ON c.id_default_group = g.id_group AND g.id_lang = '.(int)Context::getContext()->language->id.'
+            WHERE o.id_order = '.$orderId;
+
+        return Db::getInstance()->executeS($sql);
+    }
+
+    public function getPaymentInfoByOrderId($orderId)
+    {
+        $orderId = (int) $orderId;
+
+        $sql = 'SELECT 
+                op.payment_method,
+                op.transaction_id as payment_id,
+                o.module AS PSP
+            FROM '._DB_PREFIX_.'order_payment op
+            JOIN '._DB_PREFIX_.'orders o ON o.id_order = oi.id_order
+            WHERE o.id_order = '.$orderId;
+
+        return Db::getInstance()->getRow($sql);
+    }
+
     public function getOrdersForImport($importStatuses, $dateFrom, $dateTo, $limit = false)
     {
         $sql = 'SELECT '._DB_PREFIX_.'orders.`id_order` as `'._DB_PREFIX_.'order`
@@ -71,13 +101,31 @@ class OrderRepository
         return Db::getInstance()->getValue($sql);
     }
 
-    public function getOrderProductDetails($orderId)
+    public function getOrderProductDetails($orderId,$isPartial = false)
     {
-        $query = new \DbQuery();
+        if(!$isPartial){
+            $query = new \DbQuery();
 
-        $query->select('id_order_detail, product_id, product_name, product_quantity_refunded, product_quantity_return, product_ean13, product_reference, product_quantity, total_price_tax_incl');
-        $query->from('order_detail');
-        $query->where('id_order = '.(int)$orderId);
+            $query->select('id_order_detail, product_id, product_name, product_quantity_refunded, product_quantity_return, product_ean13, product_reference, product_quantity, total_price_tax_incl');
+            $query->from('order_detail');
+            $query->where('id_order = '.(int)$orderId);
+        }else{
+            $query->select('
+                od.id_order_detail,
+                od.product_id,
+                od.product_name,
+                od.product_quantity_refunded,
+                od.product_quantity_return,
+                od.product_ean13,
+                od.product_reference,
+                od.product_quantity,
+                od.total_price_tax_incl,
+                erp.quantity AS ec_reliquat_product_quantity
+            ');
+            $query->from('order_detail', 'od');
+            $query->leftJoin('ec_reliquat_product', 'erp', 'erp.id_order_detail = od.id_order_detail');
+            $query->where('od.id_order = '.(int)$orderId);
+        }
 
         return Db::getInstance()->executeS($query);
     }
@@ -195,6 +243,24 @@ class OrderRepository
 
             return Db::getInstance()->execute($sql);
         }
+    }
+
+    public function getOrderPrestashopStatus($orderId)
+    {
+        $idLang = (int) Context::getContext()->language->id;
+        $orderId = (int) $orderId;
+
+        $sql = new \DbQuery();
+        $sql->select('os.id_order_state, osl.name AS order_status');
+        $sql->from('orders', 'o');
+        $sql->join('
+            JOIN '._DB_PREFIX_.'order_state os ON o.current_state = os.id_order_state
+            JOIN '._DB_PREFIX_.'order_state_lang osl ON os.id_order_state = osl.id_order_state
+        ');
+        $sql->where('o.id_order = '.$orderId);
+        $sql->where('osl.id_lang = '.$idLang);
+
+        return Db::getInstance()->getRow($sql);
     }
 
     public function getOrderStatus($orderId)

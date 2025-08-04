@@ -72,7 +72,7 @@ class OrdersRequestBuilder
         $this->orderStatuses = new OrderStatus();
     }
 
-    public function getOrderInformationForImport($orderId)
+    public function getOrderInformationForImport($orderId,$owner = null)
     {
         $orderId = $this->getOrderForImports($orderId);
 
@@ -81,7 +81,7 @@ class OrdersRequestBuilder
         }
 
         try {
-            $orderImportData = $this->getOrderImportData($orderId);
+            $orderImportData = $this->getOrderImportData($orderId,$owner);
         } catch (\Exception $e) {
             throw new Exception('Order was not imported');
         }
@@ -93,7 +93,38 @@ class OrdersRequestBuilder
         return $orderImportData;
     }
 
-    public function getOrderImportData($idOrder)
+    public function getPayment($orderId){
+        try{
+            $payment = $this->orderRepository->getPaymentInfoByOrderId($orderId);
+
+            $paymentInfos = [];
+            if($payment){
+                $paymentInfo = [
+                    "paymentMethod" => $payment['PSP'],
+                    "transactionReference" => $payment['payment_id'],
+                    "provider" => $payment['PSP']
+                ];
+
+                if(preg_match("/alma/i",$payment['PSP']) === 1){
+                    $paymentInfo['paymentMethod'] = "Alma";
+                }
+                elseif(preg_match("/paypal/i",$payment['PSP']) === 1){
+                    $paymentInfo['paymentMethod'] = "PayPal";
+                }
+                else{
+                    $paymentInfo['paymentMethod'] = "CreditCard";
+                }
+
+                return $paymentInfos[] = $paymentInfo;
+            }
+
+            return [];
+        }catch(\Exception $e){
+            return [];
+        }
+    }
+
+    public function getOrderImportData($idOrder,$owner = null)
     {
         $orderObject = new \Order($idOrder);
 
@@ -160,31 +191,49 @@ class OrdersRequestBuilder
 
         $purchaseDateUtc = $dateTimeObject->setTimezone($dateTimeZone);
 
-        $orderImportData = [
-            'orderReference' => $orderObject->reference,
-            'civility' => 'NotSet',
-            'customerLastName' => $customerObject->lastname,
-            'customerFirstName' => $customerObject->firstname,
-            'address' => [
-                'companyName' => $addressObject->company,
-                'streetAddress' => $addressObject->address1,
-                'additionalAddress' => '',
-                'doorCode' => '',
-                'floor' => $addressObject->address2,
-                'zipCode' => $addressObject->postcode,
-                'city' => $addressObject->city,
-                'countryCode' => $country->iso_code,
-            ],
-            'phoneNumber' => $addressObject->phone,
-            'customerMail' => $customerObject->email,
-            'purchaseDateUtc' => $purchaseDateUtc->format("Y-m-d H:i:s"),
-            'products' => $modelIdArray,
-            'shippingPrice' => [
-                'amount' => $orderObject->total_shipping_tax_incl,
-                'currency' => $currency->iso_code,
-            ],
-            'salesChannel' => \Configuration::get('PS_SHOP_NAME'),
-        ];
+        $payments = $this->getPayment($orderId);
+
+        if($owner){
+            $orderImportData = [
+                'orderReference' => $orderObject->reference,
+                'ownerExternalId' => $customerObject->id_customer,
+                'purchaseDateUtc' => $purchaseDateUtc->format("Y-m-d H:i:s"),
+                'products' => $modelIdArray,
+                'shippingPrice' => [
+                    'amount' => $orderObject->total_shipping_tax_incl,
+                    'currency' => $currency->iso_code,
+                ],
+                "payments" => $payments,
+                'salesChannel' => \Configuration::get('PS_SHOP_NAME'),
+            ];
+        }else{
+            $orderImportData = [
+                'orderReference' => $orderObject->reference,
+                'civility' => 'NotSet',
+                'customerLastName' => $customerObject->lastname,
+                'customerFirstName' => $customerObject->firstname,
+                'address' => [
+                    'companyName' => $addressObject->company,
+                    'streetAddress' => $addressObject->address1,
+                    'additionalAddress' => '',
+                    'doorCode' => '',
+                    'floor' => $addressObject->address2,
+                    'zipCode' => $addressObject->postcode,
+                    'city' => $addressObject->city,
+                    'countryCode' => $country->iso_code,
+                ],
+                'phoneNumber' => $addressObject->phone,
+                'customerMail' => $customerObject->email,
+                'purchaseDateUtc' => $purchaseDateUtc->format("Y-m-d H:i:s"),
+                'products' => $modelIdArray,
+                'shippingPrice' => [
+                    'amount' => $orderObject->total_shipping_tax_incl,
+                    'currency' => $currency->iso_code,
+                ],
+                "payments" => $payments,
+                'salesChannel' => \Configuration::get('PS_SHOP_NAME'),
+            ];
+        }
 
         return $orderImportData;
     }
@@ -222,5 +271,14 @@ class OrdersRequestBuilder
         }
 
         return false;
+    }
+
+    public function getCustomerByOrderId($orderId){
+        $customer = $this->orderRepository->getCustomerByOrderId($orderId);
+        if ($customer) {
+            return $customer;
+        }
+
+        return null;
     }
 }

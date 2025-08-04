@@ -87,18 +87,35 @@ class ModelService
 
     public function getModelsIds($orderId, $currency)
     {
-        $orderProductDetails = $this->orderRepository->getOrderProductDetails($orderId);
+        $isPartial = false;
+        $status = $this->orderRepository->getOrderPrestashopStatus($orderId);
+        if($status && $status['order_status'] == 'Expédition partielle'){
+            $isPartial = true;
+        }
+
+        //Sinon recherche classique
+        $orderProductDetails = $this->orderRepository->getOrderProductDetails($orderId,$isPartial);
         $modelIdArray = [];
 
         foreach ($orderProductDetails as $orderProductDetail) {
             $id_order_detail = $orderProductDetail['id_order_detail'];
-            $quantity = $orderProductDetail['product_quantity'];
-            $quantityRefunded = $orderProductDetail['product_quantity_refunded'];
-            $quantityReturned = $orderProductDetail['product_quantity_return'];
-            $returnableQuantity = $quantity - $quantityRefunded - $quantityReturned;
+            
+            if(!$isPartial){
+                $quantity = $orderProductDetail['product_quantity'];
+                $quantityRefunded = $orderProductDetail['product_quantity_refunded'];
+                $quantityReturned = $orderProductDetail['product_quantity_return'];
+                $returnableQuantity = $quantity - $quantityRefunded - $quantityReturned;
 
-            if($quantity < 1 || $returnableQuantity < 1) {
-                continue;
+                if($quantity < 1 || $returnableQuantity < 1) {
+                    continue;
+                }
+
+            }else{
+                $quantity = $orderProductDetail['product_quantity'];
+                $returnableQuantity = $orderProductDetail['product_quantity'] - $orderProductDetail['ec_reliquat_product_quantity'];
+                if($quantity < 1 || $returnableQuantity < 1) {
+                    continue;
+                }
             }
 
             $unitPaidPrice = $orderProductDetail['total_price_tax_incl'] / (float) $quantity;
@@ -113,14 +130,16 @@ class ModelService
                         %s is not valid', $modelIdResponse->getMessage()['productReference']));
             }
 
+
             for ($i = 0; $i < $returnableQuantity; $i++) {
                 $modelIdArray[] =
                     [
                         'modelId' => $modelIdResponse->getContent(),
                         'price' => [
-                                'amount' => $unitPaidPrice,
+                            'amount' => $unitPaidPrice,
                             'currency' => $currency,
                         ],
+                        'orderDeliveryStatus' => "Delivered",
                         'orderLineReference' => $id_order_detail . "-" . $i,
                     ];
             }

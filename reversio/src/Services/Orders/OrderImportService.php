@@ -75,9 +75,9 @@ class OrderImportService
 
         foreach ($orders as $order) {
             try {
+                $owner = $this->importOwner($order['id_order']);
                 $orderImportData = $this->ordersImportRequestService->getOrderImportData($order['id_order']);
-
-                $importOrderResponse = $this->reversIoApiConnect->importOrderRequest($orderImportData);
+                $importOrderResponse = $this->reversIoApiConnect->importOrderRequest($orderImportData,$owner);
 
                 if ($importOrderResponse->isSuccess()) {
                     $orderReference = $this->orderRepository->getOrderReferenceById($order['id_order']);
@@ -96,12 +96,29 @@ class OrderImportService
     public function importOrder($idOrder)
     {
         try {
-            $ordersBody = $this->ordersImportRequestService->getOrderInformationForImport($idOrder);
+            $owner = $this->importOwner($idOrder);
+            $ordersBody = $this->ordersImportRequestService->getOrderInformationForImport($idOrder,$owner);
             $response = $this->reversIoApiConnect->importOrderRequest($ordersBody);
         } catch (\Exception $e) {
             throw new \Exception('Order import failed');
         }
 
         return $response;
+    }
+
+    public function importOwner($idOrder){
+        try{
+            $ownerBody = $this->ordersImportRequestService->getCustomerByOrderId($idOrder);
+            if($ownerBody != null){
+                $response = $this->reversIoApiConnect->putOwner($ordersBody);
+                if($response->isSuccess()){
+                    return $ownerBody;
+                }
+            }
+
+            return null;
+        }catch(\Exception $e){
+            return null;
+        }
     }
 }

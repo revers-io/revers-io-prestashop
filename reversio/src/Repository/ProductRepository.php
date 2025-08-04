@@ -60,4 +60,19 @@ class ProductRepository
 
         return Db::getInstance()->getValue($query);
     }
+
+    public function isProductReturnable($idProduct)
+    {
+        $idProduct = (int) $idProduct;
+        try{
+            $sql = 'SELECT 
+                    IF(pb.without_return = 0, 1, 0) AS isReturnable
+                FROM '._DB_PREFIX_.'product_b2b pb
+                WHERE pb.id_product = '.$idProduct;
+
+            return (bool) Db::getInstance()->getValue($sql);
+        } catch (\Exception $e) {
+            return true;
+        }
+    }
 }
