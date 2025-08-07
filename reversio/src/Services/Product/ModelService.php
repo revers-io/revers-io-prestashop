@@ -130,11 +130,14 @@ class ModelService
                         %s is not valid', $modelIdResponse->getMessage()['productReference']));
             }
 
+            $product = new Product($orderProductDetail['product_id']);
 
             for ($i = 0; $i < $returnableQuantity; $i++) {
+
                 $modelIdArray[] =
                     [
                         'modelId' => $modelIdResponse->getContent(),
+                        'sku' => $this->productService->getSkuFromProduct($product, $orderProductDetail),
                         'price' => [
                             'amount' => $unitPaidPrice,
                             'currency' => $currency,

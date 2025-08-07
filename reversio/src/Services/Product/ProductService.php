@@ -155,7 +155,7 @@ class ProductService
             ],
             "photoUrl" => $imageUrl,
             "additionalInformation" => [
-                "isReturnable" => $this->isProductReturnable($productId),
+                "isReturnable" => $this->isProductReturnable($product->id),
                 "isRepairable" => true,
                 "isTransportable" => true,
                 "isSerializable" => false,
@@ -225,7 +225,7 @@ class ProductService
 
             "photoUrl" => $imageUrl,
             "additionalInformation" => [
-                "isReturnable" => $this->isProductReturnable($productId),
+                "isReturnable" => $this->isProductReturnable($product->id),
                 "isRepairable" => true,
                 "isTransportable" => true,
                 "isSerializable" => false,

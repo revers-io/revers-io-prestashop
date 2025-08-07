@@ -46,13 +46,19 @@ class ClientFactory
         $this->version = $version;
     }
 
-    public function getClient()
+    public function getClient($apiVersion = "v1")
     {
         $apiUrlBase = Config::API_URL_BASE_LIVE;
 
         $isTestModeEnabled = (bool) Configuration::get(Config::TEST_MODE_SETTING);
         if ($isTestModeEnabled) {
             $apiUrlBase = Config::API_URL_BASE_DEMO;
+        }
+
+        if($apiVersion == 'none'){
+            $apiUrlBase = $apiUrlBase;
+        }else{
+            $apiUrlBase = $apiUrlBase . $apiVersion . "/";
         }
 
         return new Client([

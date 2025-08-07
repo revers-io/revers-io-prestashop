@@ -281,6 +281,14 @@ class ReversIOApi
                 'body' => json_encode($productBody),
             ];
 
+            if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
+                $this->logger->insertProductLogs(
+                    $productId,
+                    $productBody['label'],
+                    json_encode($productBody)
+                );
+            }
+
             $request = $this->proxyApiClient->put($url, $requestHeadersAndBody);
 
             $response->setSuccess(true);
@@ -335,19 +343,23 @@ class ReversIOApi
                 'body' => json_encode($productBody),
             ];
 
+            $this->logger->insertProductLogs(
+                $productId,
+                'INCONNU',
+                json_encode($productBody)
+            );
+
             $request = $this->proxyApiClient->post($url, $requestHeadersAndBody);
 
             $response->setSuccess(true);
             $response->setContent($request->getContent()['value']['id']);
         } catch (ClientException $exception) {
             $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
-            if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
-                $this->logger->insertProductLogs(
-                    $productId,
-                    $productBody['label'],
-                    $errorMessage
-                );
-            }
+            $this->logger->insertProductLogs(
+                $productId,
+                'INCONNU',
+                $errorMessage
+            );
             $response->setSuccess(false);
             $response->setMessage($errorMessage);
         }
@@ -363,18 +375,33 @@ class ReversIOApi
 
             $existingOrder = $this->retrieveOrder($orderBody['orderReference']);
 
-            if (!$existingOrder->isSuccess()) {           
-                $url = 'orders';
-                $requestHeadersAndBody = [
-                    'headers' => $this->apiHeadersBuilder->buildHeadersForPutAndPost(),
-                    'body' => json_encode($orderBody),
-                ];
+            $url = 'owner/orders';
+            $requestHeadersAndBody = [
+                'headers' => $this->apiHeadersBuilder->buildHeadersForPutAndPost(),
+                'body' => json_encode($orderBody),
+            ];
 
-                $request = $this->proxyApiClient->put($url, $requestHeadersAndBody);
+            if (!$existingOrder->isSuccess()) {           
+                $this->logger->insertOrderLogs(
+                    "ReversIOApi::importOrderRequest-order-".$orderBody['orderReference'],
+                    json_encode($orderBody)
+                );
+
+                //POST https://XXX.revers.io/api/owner/orders
+                $request = $this->proxyApiClient->post($url, $requestHeadersAndBody,$version = 'none');
 
                 $response->setSuccess(true);
                 $response->setContent($request);
             } else {
+                $this->logger->insertOrderLogs(
+                    "ReversIOApi::importOrderRequest-order-".$orderBody['orderReference'],
+                    "Commande déjà exportée, on applqiue un PATCH (mise à jour)"
+                );
+
+                //PATCH https://XXX.revers.io/api/v1/orders
+                $url = 'orders';
+                $request = $this->proxyApiClient->patch($url, $requestHeadersAndBody,$version = 'v1');
+
                 $response->setSuccess(true);
                 $response->setContent($existingOrder->getContent());
             }
@@ -388,18 +415,17 @@ class ReversIOApi
                 $orderBody['orderReference'],
                 Config::SYNCHRONIZED_SUCCESSFULLY_ORDERS_STATUS
             );
-        } catch (\GuzzleHttp\Exception\ClientException $exception) {
+        } catch (ClientException $exception) {
+            $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
             $this->orderRepository->insertSuccessfullyOrNotSuccessfullyImportedOrder(
                 $orderBody['orderReference'],
                 0
             );
-            $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
-            if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
-                $this->logger->insertOrderLogs(
-                    $orderBody['orderReference'],
-                    $errorMessage
-                );
-            }
+            $errorMessage = $exception->getMessage();
+            $this->logger->insertOrderLogs(
+                $orderBody['orderReference'],
+                $errorMessage
+            );
             $this->orderRepository->insertOrdersByState(
                 $orderBody['orderReference'],
                 Config::SYNCHRONIZED_UNSUCCESSFULLY_ORDERS_STATUS
@@ -550,6 +576,10 @@ class ReversIOApi
 
     public function putOwner($ownerBody)
     {
+        $this->logger->insertOrderLogs(
+            "ReversIOApi::putOwner",
+            "debut"
+        );
         $response = new ReversIoResponse();
 
         try {
@@ -559,7 +589,6 @@ class ReversIOApi
                 "email" => $ownerBody['email'],
                 "firstname" => $ownerBody['firstname'],
                 "lastname" => $ownerBody['lastname'],
-                "phone" => $ownerBody['phone_mobile'],
                 "address" => [
                     "address" => $ownerBody['address1'],
                     "additionalAddress" => $ownerBody['address2'],
@@ -578,23 +607,31 @@ class ReversIOApi
                 'body' => json_encode($owner),
             ];
 
-            $request = $this->proxyApiClient->put($url, $requestHeadersAndBody);
+            $this->logger->insertOrderLogs(
+                "ReversIOApi::putOwner-customerId-" .$ownerBody['id_customer'],
+                json_encode($owner)
+            );
+
+            $request = $this->proxyApiClient->put($url, $requestHeadersAndBody,$version = 'none');
 
             $response->setSuccess(true);
             $response->setContent($request->getContent());
-        } catch (\GuzzleHttp\Exception\ClientException $exception) {
-            $errorMessage = $exception->getResponse()->json()['errors'][0]['message'];
+        } catch (\Exception $exception) {
+            $errorMessage = $exception->getMessage();
 
-            if (Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
-                $this->logger->insertOrderLogs(
-                    $owner['externalId'],
-                    $errorMessage
-                );
-            }
+            $this->logger->insertOrderLogs(
+                "ReversIOApi::putOwner-ERROR-customerId-" . $ownerBody['id_customer'],
+                $errorMessage
+            );
 
             $response->setSuccess(false);
             $response->setMessage($errorMessage);
         }
+
+        $this->logger->insertOrderLogs(
+            "ReversIOApi::putOwner",
+            "fin"
+        );
 
         return $response;
     }

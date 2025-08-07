@@ -43,9 +43,9 @@ class ApiClient implements ApiClientInterface
         $this->client = $client;
     }
 
-    public function get($url, $headers)
+    public function get($url, $headers,$version = 'v1')
     {
-        $client = $this->client->getClient();
+        $client = $this->client->getClient($version);
 
         $response = new ReversIoResponse();
 
@@ -62,9 +62,10 @@ class ApiClient implements ApiClientInterface
         return $response;
     }
 
-    public function put($url, $requestHeadersAndBody)
+    public function put($url, $requestHeadersAndBody,$version = 'v1')
     {
-        $client = $this->client->getClient();
+        $client = $this->client->getClient($version);
+        //Url
 
         $response = new ReversIoResponse();
 
@@ -80,14 +81,32 @@ class ApiClient implements ApiClientInterface
         return $response;
     }
 
-    public function post($url, $headers)
+    public function post($url, $headers,$version = 'v1')
     {
-        $client = $this->client->getClient();
+        $client = $this->client->getClient($version);
 
         $response = new ReversIoResponse();
 
         try {
             $request = $client->post($url, $headers);
+            $response->setSuccess(true);
+            $response->setContent(json_decode($request->getBody()->__toString(), true));
+        } catch (ClientException $exception) {
+            $response->setSuccess(false);
+            $response->setMessage($exception->getMessage());
+            throw $exception;
+        }
+        return $response;
+    }
+
+    public function patch($url, $headers,$version = 'v1')
+    {
+        $client = $this->client->getClient($version);
+
+        $response = new ReversIoResponse();
+
+        try {
+            $request = $client->patch($url, $headers);
             $response->setSuccess(true);
             $response->setContent(json_decode($request->getBody()->__toString(), true));
         } catch (ClientException $exception) {

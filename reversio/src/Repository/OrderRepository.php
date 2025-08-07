@@ -32,6 +32,7 @@ use Db;
 use Configuration;
 use ReversIO\Config\Config;
 use ReversIO\Services\Getters\ColourGetter;
+use Context;
 
 class OrderRepository
 {
@@ -49,13 +50,17 @@ class OrderRepository
 
         $sql = 'SELECT 
                 c.*,
-                g.name AS group_name
+                a.*,
+                g.name AS group_name,
+                cou.iso_code AS country_iso
             FROM '._DB_PREFIX_.'orders o
             JOIN '._DB_PREFIX_.'customer c ON o.id_customer = c.id_customer
-            JOIN '._DB_PREFIX_.'group_lang g ON c.id_default_group = g.id_group AND g.id_lang = '.(int)Context::getContext()->language->id.'
+            LEFT JOIN '._DB_PREFIX_.'address a ON c.id_customer = a.id_customer
+            LEFT JOIN '._DB_PREFIX_.'country cou ON cou.id_country = a.id_country
+            LEFT JOIN '._DB_PREFIX_.'group_lang g ON c.id_default_group = g.id_group AND g.id_lang = '.(int)Context::getContext()->language->id.'
             WHERE o.id_order = '.$orderId;
 
-        return Db::getInstance()->executeS($sql);
+        return Db::getInstance()->getRow($sql);
     }
 
     public function getPaymentInfoByOrderId($orderId)
@@ -110,6 +115,7 @@ class OrderRepository
             $query->from('order_detail');
             $query->where('id_order = '.(int)$orderId);
         }else{
+            //Spécifique H2R table ec_reliquat_product
             $query->select('
                 od.id_order_detail,
                 od.product_id,

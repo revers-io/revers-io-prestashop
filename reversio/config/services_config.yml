@@ -34,6 +34,7 @@ services:
     class: 'ReversIO\Services\Product\ProductService'
     arguments:
       - '@categoryMapService'
+      - '@productRepository'
 
   ordersImport:
     class: 'ReversIO\Services\Orders\OrdersRequestBuilder'
@@ -93,6 +94,7 @@ services:
       - '@ordersImport'
       - '@reversIoApiConnect'
       - '@orderRepository'
+      - '@loggerService'
 
   ordersRetrieveService:
     class: 'ReversIO\Services\Orders\OrdersRetrieveService'

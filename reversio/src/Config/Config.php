@@ -35,9 +35,9 @@ namespace ReversIO\Config;
  */
 class Config
 {
-    const API_URL_BASE_DEMO = 'https://demo-customer-api.revers.io/api/v1/';
+    const API_URL_BASE_DEMO = 'https://demo-customer-api.revers.io/api/';
 
-    const API_URL_BASE_LIVE = 'https://customer-api.revers.io/api/v1/';
+    const API_URL_BASE_LIVE = 'https://customer-api.revers.io/api/';
 
     const DISABLE_CACHE = false;
 

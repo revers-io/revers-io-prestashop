@@ -53,20 +53,20 @@ class ProxyApiClient implements ApiClientInterface
         $this->decoder = $decoder;
     }
 
-    public function get($url, $headers)
+    public function get($url, $headers,$version = "v1")
     {
         $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
         $apiSecretKey =  $this->decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
 
         try {
-            return $this->apiClient->get($url, $headers);
+            return $this->apiClient->get($url, $headers,$version);
         } catch (ClientException $exception) {
             $statusCode = $exception->getCode();
 
             if ($statusCode === 401) {
                 $tokenRequest = $this->token->getToken($apiPublicKey, $apiSecretKey);
                 if ($tokenRequest->isSuccess()) {
-                    return $this->apiClient->get($url, $headers);
+                    return $this->apiClient->get($url, $headers,$version);
                 }
             }
 
@@ -74,20 +74,20 @@ class ProxyApiClient implements ApiClientInterface
         }
     }
 
-    public function post($url, $headers)
+    public function post($url, $headers,$version = "v1")
     {
         $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
         $apiSecretKey = $this->decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
 
         try {
-            return $this->apiClient->post($url, $headers);
+            return $this->apiClient->post($url, $headers,$version);
         } catch (ClientException $exception) {
             $statusCode = $exception->getCode();
 
             if ($statusCode === 401) {
                 $tokenRequest = $this->token->getToken($apiPublicKey, $apiSecretKey);
                 if ($tokenRequest->isSuccess()) {
-                    return $this->apiClient->post($url, $headers);
+                    return $this->apiClient->post($url, $headers,$version);
                 }
             }
 
@@ -95,20 +95,41 @@ class ProxyApiClient implements ApiClientInterface
         }
     }
 
-    public function put($url, $headers)
+    public function put($url, $headers,$version = "v1")
     {
         $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
         $apiSecretKey = $this->decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
 
         try {
-            return $this->apiClient->put($url, $headers);
+            return $this->apiClient->put($url, $headers,$version);
         } catch (ClientException $exception) {
             $statusCode = $exception->getCode();
 
             if ($statusCode === 401) {
                 $tokenRequest = $this->token->getToken($apiPublicKey, $apiSecretKey);
                 if ($tokenRequest->isSuccess()) {
-                    return $this->apiClient->put($url, $headers);
+                    return $this->apiClient->put($url, $headers,$version);
+                }
+            }
+
+            throw $exception;
+        }
+    }
+
+    public function patch($url, $headers,$version = "v1")
+    {
+        $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
+        $apiSecretKey = $this->decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
+
+        try {
+            return $this->apiClient->patch($url, $headers,$version);
+        } catch (ClientException $exception) {
+            $statusCode = $exception->getCode();
+
+            if ($statusCode === 401) {
+                $tokenRequest = $this->token->getToken($apiPublicKey, $apiSecretKey);
+                if ($tokenRequest->isSuccess()) {
+                    return $this->apiClient->patch($url, $headers,$version);
                 }
             }
 

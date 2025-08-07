@@ -83,6 +83,10 @@ class OrdersRequestBuilder
         try {
             $orderImportData = $this->getOrderImportData($orderId,$owner);
         } catch (\Exception $e) {
+            $this->logger->insertOrderLogs(
+                "OrdersRequestBuilder::getOrderInformationForImport-orderId-".$orderId,
+                $e->getMessage()
+            );
             throw new Exception('Order was not imported');
         }
 
@@ -148,6 +152,10 @@ class OrdersRequestBuilder
 
         try {
             $modelIdArray = $this->modelService->getModelsIds($idOrder, $currency->iso_code);
+            $this->logger->insertOrderLogs(
+                "OrdersRequestBuilder::getOrderImportData-modelIdArray-order-".$orderObject->reference,
+                json_encode($modelIdArray)
+            );
         } catch (\Exception $e) {
             $this->logger->insertOrderLogs(
                 $orderObject->reference,
@@ -191,12 +199,12 @@ class OrdersRequestBuilder
 
         $purchaseDateUtc = $dateTimeObject->setTimezone($dateTimeZone);
 
-        $payments = $this->getPayment($orderId);
+        $payments = $this->getPayment($idOrder);
 
-        if($owner){
+        if($owner != null){
             $orderImportData = [
                 'orderReference' => $orderObject->reference,
-                'ownerExternalId' => $customerObject->id_customer,
+                'ownerExternalId' => $orderObject->id_customer,
                 'purchaseDateUtc' => $purchaseDateUtc->format("Y-m-d H:i:s"),
                 'products' => $modelIdArray,
                 'shippingPrice' => [
@@ -234,6 +242,11 @@ class OrdersRequestBuilder
                 'salesChannel' => \Configuration::get('PS_SHOP_NAME'),
             ];
         }
+
+        $this->logger->insertOrderLogs(
+            "OrdersRequestBuilder::getOrderImportData-payload-order-".$orderObject->reference,
+            json_encode($orderImportData)
+        );
 
         return $orderImportData;
     }
@@ -275,7 +288,12 @@ class OrdersRequestBuilder
 
     public function getCustomerByOrderId($orderId){
         $customer = $this->orderRepository->getCustomerByOrderId($orderId);
-        if ($customer) {
+        $this->logger->insertOrderLogs(
+            "OrdersRequestBuilder::getCustomerByOrderId-orderId-".$orderId,
+            json_encode($customer)
+        );
+        
+        if (!empty($customer)) {
             return $customer;
         }
 

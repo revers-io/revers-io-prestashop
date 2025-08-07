@@ -65,6 +65,8 @@ class Token
             $apiUrlBase = Config::API_URL_BASE_DEMO;
         }
 
+        $apiUrlBase = $apiUrlBase . "v1/";
+
         try {
             $request = $client->get($apiUrlBase.'token?secret='.$apisecretKey, [
                 'headers' => [

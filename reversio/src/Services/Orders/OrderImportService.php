@@ -31,6 +31,8 @@ namespace ReversIO\Services\Orders;
 use ReversIO\Repository\OrderRepository;
 use ReversIO\Response\ReversIoOrderImportResponse;
 use ReversIO\Services\APIConnect\ReversIOApi;
+use ReversIO\Repository\Logs\Logger;
+use ReversIO\Repository\Logs\LogsRepository;
 
 class OrderImportService
 {
@@ -48,14 +50,19 @@ class OrderImportService
      */
     private $defaultBatchSize = 2;
 
+    /** @var Logger */
+    private $logger;
+
     public function __construct(
         OrdersRequestBuilder $ordersImportRequestService,
         ReversIOApi $reversIoApiConnect,
-        OrderRepository $orderRepository
+        OrderRepository $orderRepository,
+        Logger $logger
     ) {
         $this->ordersImportRequestService = $ordersImportRequestService;
         $this->reversIoApiConnect = $reversIoApiConnect;
         $this->orderRepository = $orderRepository;
+        $this->logger = $logger;
     }
 
     /**
@@ -97,9 +104,33 @@ class OrderImportService
     {
         try {
             $owner = $this->importOwner($idOrder);
+            $this->logger->insertOrderLogs(
+                "OrderImportService::importOrder-owner-order-".$idOrder,
+                json_encode($owner)
+            );
             $ordersBody = $this->ordersImportRequestService->getOrderInformationForImport($idOrder,$owner);
+            $this->logger->insertOrderLogs(
+                "OrderImportService::importOrder-order-".$idOrder,
+                json_encode($ordersBody)
+            );
             $response = $this->reversIoApiConnect->importOrderRequest($ordersBody);
+
+            if(!$response->isSuccess()){
+                $this->logger->insertOrderLogs(
+                    "OrderImportService::importOrder-Fin".$idOrder,
+                    "Erreur lors de l'import de commande"
+                );
+            }else{
+                $this->logger->insertOrderLogs(
+                    "OrderImportService::importOrder-Fin".$idOrder,
+                    "Commande importé"
+                );
+            }
         } catch (\Exception $e) {
+            $this->logger->insertOrderLogs(
+                "OrderImportService::importOrder-error-orderId-".$idOrder,
+                $e->getMessage()
+            );
             throw new \Exception('Order import failed');
         }
 
@@ -110,7 +141,10 @@ class OrderImportService
         try{
             $ownerBody = $this->ordersImportRequestService->getCustomerByOrderId($idOrder);
             if($ownerBody != null){
-                $response = $this->reversIoApiConnect->putOwner($ordersBody);
+                if(empty($ownerBody['address1']) || empty($ownerBody['group_name'])){
+                    return null;
+                }   
+                $response = $this->reversIoApiConnect->putOwner($ownerBody);
                 if($response->isSuccess()){
                     return $ownerBody;
                 }

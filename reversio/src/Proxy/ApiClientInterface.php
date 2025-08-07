@@ -30,9 +30,11 @@ namespace ReversIO\Proxy;
 
 interface ApiClientInterface
 {
-    public function get($url, $headers);
+    public function get($url, $headers,$version = "v1");
 
-    public function post($url, $headers);
+    public function post($url, $headers,$version = "v1");
 
-    public function put($url, $headers);
+    public function put($url, $headers,$version = "v1");
+
+    public function patch($url, $headers,$version = "v1");
 }
