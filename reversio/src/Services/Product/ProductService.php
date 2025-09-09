@@ -172,7 +172,8 @@ class ProductService
     }
 
     public function isProductReturnable($productId){
-        return $this->productRepository->isProductReturnable($productId);
+        return true;
+        //return $this->productRepository->isProductReturnable($productId);
     }
 
     public function getInfoAboutProductForUpdate($productIdForUpdate, $modelId, $language, $productOrderDetail)
