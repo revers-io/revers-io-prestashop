@@ -67,7 +67,7 @@ class ProductRepository
         try{
             $sql = 'SELECT 
                     IF(pb.without_return = 0, 1, 0) AS isReturnable
-                FROM '._DB_PREFIX_.'product_b2b pb
+                FROM '._DB_PREFIX_.'product_xobj pb
                 WHERE pb.id_product = '.$idProduct;
 
             return (bool) Db::getInstance()->getValue($sql);
