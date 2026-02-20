@@ -76,7 +76,10 @@ class OrderImportService
         foreach ($orders as $order) {
             try {
                 $orderImportData = $this->ordersImportRequestService->getOrderImportData($order['id_order']);
-
+                \PrestaShopLogger::addLog(
+                    'ReversIO orderImportData: '.json_encode($orderImportData),
+                    1
+                );
                 $importOrderResponse = $this->reversIoApiConnect->importOrderRequest($orderImportData);
 
                 if ($importOrderResponse->isSuccess()) {
@@ -95,8 +98,11 @@ class OrderImportService
 
     public function importOrder($idOrder)
     {
+
         try {
+
             $ordersBody = $this->ordersImportRequestService->getOrderInformationForImport($idOrder);
+
             $response = $this->reversIoApiConnect->importOrderRequest($ordersBody);
         } catch (\Exception $e) {
             throw new \Exception('Order import failed');

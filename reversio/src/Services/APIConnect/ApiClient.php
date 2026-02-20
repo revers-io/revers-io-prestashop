@@ -47,12 +47,15 @@ class ApiClient implements ApiClientInterface
     {
         $client = $this->client->getClient();
 
+
         $response = new ReversIoResponse();
 
         try {
             $request = $client->get($url, $headers);
+
             $response->setSuccess(true);
-            $response->setContent(json_decode($request->getBody()->__toString(), true));
+            $response->setContent(json_decode($request->getBody()->getContents(), true));
+
         } catch (ClientException $exception) {
             $response->setSuccess(false);
             $response->setMessage($exception->getMessage());

@@ -96,38 +96,46 @@ class AdminReversIOLogsController extends ReversIOAbstractAdminController
     {
         unset($token);
 
-        /** @var \ReversIO\Repository\Logs\LogsRepository $logsRepository */
-        $logsRepository = $this->module->getContainer()->get('logsRepository');
+        try {
 
-        $logsInfo = $logsRepository->getLogIdByReference($reference);
+            $logsRepository = new \ReversIO\Repository\Logs\LogsRepository();
 
-        $viewUrl = $this->context->link->getAdminLink('AdminManufacturers');
+            $logsInfo = $logsRepository->getLogIdByReference($reference);
 
-        foreach ($logsInfo as $logInfo) {
-            if ($logInfo['type'] === Config::TYPE_SEARCH_ORDER) {
-                $ordersUrlParam = [
-                    'vieworder' => 1,
-                    'id_order' => (int)$logInfo['error_log_identifier'],
-                ];
+            $viewUrl = $this->context->link->getAdminLink('AdminManufacturers');
 
-                $viewUrl = $this->context->link->getAdminLink('AdminOrders', true, [], $ordersUrlParam);
-            } elseif ($logInfo['type'] === Config::TYPE_SEARCH_PRODUCT) {
-                $UrlParam = [
-                    'updateproduct' => 1,
-                    'id_product' => (int)$logInfo['error_log_identifier'],
-                ];
+            foreach ($logsInfo as $logInfo) {
+                if ($logInfo['type'] === \ReversIO\Config\Config::TYPE_SEARCH_ORDER) {
 
-                $viewUrl = $this->context->link->getAdminLink('AdminProducts', true, $UrlParam);
+                    $ordersUrlParam = [
+                        'vieworder' => 1,
+                        'id_order' => (int) $logInfo['error_log_identifier'],
+                    ];
+
+                    $viewUrl = $this->context->link->getAdminLink('AdminOrders', true, [], $ordersUrlParam);
+
+                } elseif ($logInfo['type'] === \ReversIO\Config\Config::TYPE_SEARCH_PRODUCT) {
+
+                    $UrlParam = [
+                        'updateproduct' => 1,
+                        'id_product' => (int) $logInfo['error_log_identifier'],
+                    ];
+
+                    $viewUrl = $this->context->link->getAdminLink('AdminProducts', true, $UrlParam);
+                }
             }
+
+            $params = [
+                'href'   => $viewUrl,
+                'action' => $this->l('View'),
+                'icon'   => 'icon-search-plus',
+            ];
+
+            return $this->renderListAction($params);
+
+        } catch (\Exception $e) {
+            return '';
         }
-
-        $params = [
-            'href' => $viewUrl,
-            'action' => $this->l('View'),
-            'icon' => 'icon-search-plus',
-        ];
-
-        return $this->renderListAction($params);
     }
 
     private function renderListAction(array $params)

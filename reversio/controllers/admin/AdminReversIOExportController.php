@@ -28,14 +28,40 @@
 
 use ReversIO\Controller\ReversIOAbstractAdminController;
 
+use ReversIO\Services\Log\LogService;
+use ReversIO\Repository\Logs\Logger;
+use ReversIO\Repository\OrderRepository;
+use ReversIO\Repository\ProductRepository;
+use ReversIO\Repository\BrandRepository;
+use ReversIO\Services\Getters\ColourGetter;
+
 class AdminReversIOExportController extends ReversIOAbstractAdminController
 {
     public function postProcess()
     {
-        /** @var \ReversIO\Services\Log\LogService $logService */
-        $logService = $this->module->getContainer()->get('logService');
-        $logService->downloadLogs();
+        try {
+
+            $colourGetter = new ColourGetter();
+
+            $orderRepository   = new OrderRepository($colourGetter);
+            $productRepository = new ProductRepository();
+            $brandRepository   = new BrandRepository();
+
+            $loggerService = new Logger(
+                $orderRepository,
+                $productRepository,
+                $brandRepository
+            );
+
+            $logService = new LogService($loggerService);
+
+            $logService->downloadLogs();
+
+        } catch (\Exception $e) {
+            // ne jamais casser le BO
+        }
 
         return parent::postProcess();
     }
 }
+

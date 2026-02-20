@@ -26,8 +26,36 @@
  * @see       /LICENSE
  */
 
+
 use ReversIO\Config\Config;
 use ReversIO\Controller\ReversIOAbstractAdminController;
+use ReversIO\Repository\CategoryMapRepository;
+use ReversIO\Services\CategoryMapService;
+use ReversIO\Services\Decoder\Decoder;
+use ReversIO\Services\APIConnect\Token;
+use ReversIO\Services\APIConnect\ReversIOApi;
+use ReversIO\Services\APIConnect\ApiHeadersBuilder;
+use ReversIO\Services\APIConnect\ApiClient;
+use ReversIO\Factory\ClientFactory;
+use ReversIO\Proxy\ProxyApiClient;
+use ReversIO\Services\Cache\Cache;
+use ReversIO\Services\Versions\Versions as ReversioVersions;
+use ReversIO\Repository\OrderRepository;
+use ReversIO\Repository\ProductRepository;
+use ReversIO\Repository\CategoryRepository;
+use ReversIO\Repository\ExportedProductsRepository;
+use ReversIO\Repository\ProductsForExportRepository;
+use ReversIO\Repository\Logs\LogsRepository;
+use ReversIO\Services\Orders\OrdersRetrieveService;
+use ReversIO\Services\Product\ProductService;
+use ReversIO\Services\Brand\BrandService;
+use ReversIO\Services\Product\ModelService;
+use ReversIO\Services\Getters\ColourGetter;
+use ReversIO\Services\Getters\ReversIoSettingNameGetter;
+use ReversIO\Repository\BrandRepository;
+
+
+
 
 class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminController
 {
@@ -73,8 +101,8 @@ class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminContro
         if (Tools::isSubmit('submitCategoryMapping')) {
             /** @var \ReversIO\Services\CategoryMapService $categoryMapService */
             /** @var \ReversIO\Repository\CategoryMapRepository $categoryMapRepository */
-            $categoryMapService = $this->module->getContainer()->get('categoryMapService');
-            $categoryMapRepository = $this->module->getContainer()->get('categoryMapRepository');
+            $categoryMapRepository = new CategoryMapRepository();
+            $categoryMapService = new CategoryMapService($categoryMapRepository);
 
             $mappedCategoriesFromPost = $categoryMapService->formatMappedCategoriesFromPost($_POST);
 
@@ -104,14 +132,90 @@ class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminContro
 
     private function initCategoryMappingContent()
     {
-        /** @var \ReversIO\Services\CategoryMapService $categoryMapService */
-        /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIOAPIConnect */
-        /** @var \ReversIO\Repository\CategoryMapRepository $categoryMapRepository */
-        $categoryMapService = $this->module->getContainer()->get('categoryMapService');
-        $reversIOAPIConnect = $this->module->getContainer()->get('reversIoApiConnect');
-        $categoryMapRepository = $this->module->getContainer()->get('categoryMapRepository');
+        // --- Repositories ---
+        $categoryMapRepository = new CategoryMapRepository();
+        $categoryRepository = new CategoryRepository();
+        $productsForExportRepository = new ProductsForExportRepository();
+        $exportedProductsRepository = new ExportedProductsRepository();
+        $productRepository = new ProductRepository();
+        $brandRepository = new BrandRepository();
+        $logsRepository = new LogsRepository();
 
-        $rootCategory = $categoryMapService->getRootCategory($this->context->language->id, $this->context->shop, $categoryMapRepository->getAllMappedCategories());
+        // --- Helpers ---
+        $decoder = new Decoder();
+        $token = new Token($decoder);
+        $versions = new ReversioVersions();
+
+        $clientFactory = new ClientFactory($versions);
+        $apiClient = new ApiClient($clientFactory);
+        $proxyApiClient = new ProxyApiClient($token, $apiClient, $decoder);
+        $apiHeadersBuilder = new ApiHeadersBuilder($token);
+
+        // --- Order repo ---
+        $colourGetter = new ColourGetter();
+        $orderRepository = new OrderRepository($colourGetter);
+
+        // --- Services ---
+        $categoryMapService = new CategoryMapService($categoryMapRepository);
+        $brandService = new BrandService($this->module, new \ReversIO\Adapter\ArrayAdapter());
+        $productImporter = new ProductService($categoryMapService);
+
+        $loggerService = new \ReversIO\Repository\Logs\Logger(
+            $orderRepository,
+            $productRepository,
+            $brandRepository
+        );
+
+        // --- Cache (module) ---
+
+
+
+        // --- OrdersRetrieveService sans API pour l’instant ---
+        $ordersRetrieveService = new OrdersRetrieveService();
+
+
+        // --- API ---
+        $reversIoApiConnect = new ReversIOApi(
+            $productImporter,
+            $orderRepository,
+            $logsRepository,
+            $ordersRetrieveService,
+            $loggerService,
+            $token,
+            $proxyApiClient,
+            $productsForExportRepository,
+            $categoryMapRepository,
+            $categoryRepository,
+            $brandService,
+            $exportedProductsRepository,
+            $versions,
+            $productRepository,
+            $apiHeadersBuilder,
+            null
+        );
+        $cache = new Cache($reversIoApiConnect);
+
+        // --- Injections croisées ---
+        $reversIoApiConnect->setOrdersRetrieveService($ordersRetrieveService);
+        $reversIoApiConnect->setCache($cache);
+        $ordersRetrieveService->setApi($reversIoApiConnect);
+
+        // --- Model service ---
+        $modelService = new ModelService(
+            $this->module,
+            $orderRepository,
+            $productsForExportRepository,
+            $reversIoApiConnect,
+            $cache,
+            $exportedProductsRepository
+        );
+
+        // --- Category data ---
+        $rootCategory = $categoryMapService->getRootCategory(
+            $this->context->language->id,
+            $this->context->shop,
+            $categoryMapRepository->getAllMappedCategories()
+        );
 
         $categoryTree = $categoryMapService->getMappedCategoryTree(
             $this->context->language->id,
@@ -119,7 +223,7 @@ class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminContro
             $categoryMapRepository->getAllMappedCategories()
         );
 
-        $modelTypesList = $reversIOAPIConnect->getModelTypes($this->context->language->iso_code);
+        $modelTypesList = $reversIoApiConnect->getModelTypes($this->context->language->iso_code);
 
         if ($modelTypesList) {
             $modelTypesList = $categoryMapService->formatModelTypes($modelTypesList->getContent()['value']);
@@ -131,10 +235,6 @@ class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminContro
             'rootCategory' => $rootCategory,
             'key' => 0,
         ];
-//
-//        dump($categoryTree);
-//        dump($rootCategory);
-//        die();
 
         $this->context->smarty->assign($tplVars);
 
@@ -144,4 +244,6 @@ class AdminReversIOCategoryMappingController extends ReversIOAbstractAdminContro
 
         $this->context->smarty->assign('content', $this->content);
     }
+
+
 }

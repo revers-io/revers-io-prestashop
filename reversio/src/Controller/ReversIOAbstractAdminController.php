@@ -37,6 +37,9 @@ use ReversIO\Services\Versions\Versions;
 use ReversIO;
 use Tab;
 use Tools;
+use ReversIO\Services\Decoder\Decoder;
+use ReversIO\Services\APIConnect\Token;
+
 
 /**
  * Class ReversIOAbstractAdminController
@@ -61,13 +64,12 @@ class ReversIOAbstractAdminController extends ModuleAdminController
 
         $this->displayTestModeWarning();
 
-        /** @var APIAuthentication $settingAuthentication */
-        /** @var ReversIO\Services\Decoder\Decoder $decoder */
-        $settingAuthentication = $this->module->getContainer()->get('autentification');
-        $decoder = $this->module->getContainer()->get('reversio_decoder');
+        $decoder = new Decoder();
+        $token = new Token($decoder);
+        $settingAuthentication = new APIAuthentication($token);
 
         $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
-        $apiSecretKey =  $decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
+        $apiSecretKey = $decoder->base64Decoder(Configuration::get(Config::SECRET_KEY));
 
         if (!$settingAuthentication->authentication($apiPublicKey, $apiSecretKey)) {
             $this->showHideModuleTabs(0, -1);
@@ -76,6 +78,7 @@ class ReversIOAbstractAdminController extends ModuleAdminController
 
         parent::init();
     }
+
 
     /**
      * Display test mode warning if test mode is enabled
@@ -106,7 +109,7 @@ class ReversIOAbstractAdminController extends ModuleAdminController
         $moduleTabs = $this->module->getTabs();
 
         /** @var Versions $version */
-        $version = $this->module->getContainer()->get('versions');
+        $version = new Versions();
 
         foreach ($moduleTabs as $moduleTab) {
             if ($moduleTab['class_name'] === Config::CONTROLLER_INVISIBLE

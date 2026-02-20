@@ -44,6 +44,6 @@
         </select>
     </div>
 
-    <div class="reversio-category-childrens-{$category.id_category}">
+    <div class="reversio-category-childrens-{$category.id_category}" style="margin-top: 10px">
     </div>
 </div>
