@@ -45,6 +45,9 @@ class OrderRepository
 
     public function getOrdersForImport($importStatuses, $dateFrom, $dateTo, $limit = false)
     {
+        $dateFrom = \Configuration::get(Config::ORDER_DATE_FROM);
+        $dateTo = \Configuration::get(Config::ORDER_DATE_TO);
+
         $sql = 'SELECT '._DB_PREFIX_.'orders.`id_order` as `'._DB_PREFIX_.'order`
                 FROM '._DB_PREFIX_.'orders 
                 LEFT JOIN '._DB_PREFIX_.'revers_io_imported_orders ON 
@@ -75,7 +78,7 @@ class OrderRepository
     {
         $query = new \DbQuery();
 
-        $query->select('product_id');
+        $query->select('product_id, product_quantity');
         $query->from('order_detail');
         $query->where('id_order = '.(int)$orderId);
 

@@ -54,9 +54,8 @@ class ClientFactory
         if ($isTestModeEnabled) {
             $apiUrlBase = Config::API_URL_BASE_DEMO;
         }
-
         return new Client([
-            'base_url' => $apiUrlBase,
+            'base_uri' => $apiUrlBase,
         ]);
     }
 }

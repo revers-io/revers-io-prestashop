@@ -25,6 +25,35 @@
  * @license   Revers.io
  * @see       /LICENSE
  */
+use ReversIO\Services\Decoder\Decoder;
+use ReversIO\Services\APIConnect\Token;
+use ReversIO\Services\Versions\Versions;
+use ReversIO\Services\Getters\ColourGetter;
+
+use ReversIO\Repository\OrderRepository;
+use ReversIO\Repository\ProductRepository;
+use ReversIO\Repository\BrandRepository;
+use ReversIO\Repository\CategoryRepository;
+use ReversIO\Repository\CategoryMapRepository;
+use ReversIO\Repository\ProductsForExportRepository;
+use ReversIO\Repository\ExportedProductsRepository;
+use ReversIO\Repository\Logs\LogsRepository;
+
+use ReversIO\Services\CategoryMapService;
+use ReversIO\Services\Product\ProductService;
+use ReversIO\Services\Product\ModelService;
+use ReversIO\Services\Orders\OrdersRetrieveService;
+use ReversIO\Services\Orders\OrdersRequestBuilder;
+use ReversIO\Services\Orders\OrderImportService;
+
+use ReversIO\Services\APIConnect\ReversIOApi;
+use ReversIO\Services\APIConnect\ApiClient;
+use ReversIO\Services\APIConnect\ApiHeadersBuilder;
+
+use ReversIO\Factory\ClientFactory;
+use ReversIO\Proxy\ProxyApiClient;
+use ReversIO\Adapter\ArrayAdapter;
+use ReversIO\Services\Cache\Cache;
 
 class ReversioAjaxModuleFrontController extends ModuleFrontController
 {
@@ -36,26 +65,118 @@ class ReversioAjaxModuleFrontController extends ModuleFrontController
             die();
         }
 
-        /** @var \ReversIO\Services\Orders\OrderImportService $orderImportService */
-        /** @var \ReversIO\Repository\OrderRepository $orderRepository */
-        /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIoApiConnect */
-        $orderImportService = $this->module->getContainer()->get('orderImportService');
-        $orderRepository = $this->module->getContainer()->get('orderRepository');
-        $reversIoApiConnect = $this->module->getContainer()->get('reversIoApiConnect');
-
-        $orderRepository->deleteUnsuccessfullyOrders();
-        $orderId = Tools::getValue('orderId');
-        $orderReference = $orderRepository->getOrderReferenceById($orderId);
-
         try {
+
+            // ===== Dépendances =====
+
+            $decoder = new \ReversIO\Services\Decoder\Decoder();
+            $token   = new \ReversIO\Services\APIConnect\Token($decoder);
+
+            $versions = new \ReversIO\Services\Versions\Versions();
+
+            $colourGetter = new \ReversIO\Services\Getters\ColourGetter();
+
+            $orderRepository = new \ReversIO\Repository\OrderRepository($colourGetter);
+
+            $productRepository = new \ReversIO\Repository\ProductRepository();
+            $brandRepository   = new \ReversIO\Repository\BrandRepository();
+            $logsRepository    = new \ReversIO\Repository\Logs\LogsRepository();
+
+            $productsForExportRepository = new \ReversIO\Repository\ProductsForExportRepository();
+            $exportedProductsRepository  = new \ReversIO\Repository\ExportedProductsRepository();
+
+            $categoryMapRepository = new \ReversIO\Repository\CategoryMapRepository();
+            $categoryRepository    = new \ReversIO\Repository\CategoryRepository();
+
+            $categoryMapService = new \ReversIO\Services\CategoryMapService($categoryMapRepository);
+
+            $brandService = new \ReversIO\Services\Brand\BrandService(
+                $this->module,
+                new \ReversIO\Adapter\ArrayAdapter()
+            );
+
+            $clientFactory = new \ReversIO\Factory\ClientFactory($versions);
+            $apiClient     = new \ReversIO\Services\APIConnect\ApiClient($clientFactory);
+
+            $proxyApiClient = new \ReversIO\Proxy\ProxyApiClient($token, $apiClient, $decoder);
+
+            $apiHeadersBuilder = new \ReversIO\Services\APIConnect\ApiHeadersBuilder($token);
+
+            $cache = new \ReversIO\Services\Cache\Cache($this->module);
+
+            $ordersRetrieveService = new \ReversIO\Services\Orders\OrdersRetrieveService($this->module);
+
+            $productImporter = new \ReversIO\Services\Product\ProductService($categoryMapService);
+
+            $loggerService = new \ReversIO\Repository\Logs\Logger(
+                $orderRepository,
+                $productRepository,
+                $brandRepository
+            );
+
+            $reversIoApiConnect = new \ReversIO\Services\APIConnect\ReversIOApi(
+                $productImporter,
+                $orderRepository,
+                $logsRepository,
+                $ordersRetrieveService,
+                $loggerService,
+                $token,
+                $proxyApiClient,
+                $productsForExportRepository,
+                $categoryMapRepository,
+                $categoryRepository,
+                $brandService,
+                $exportedProductsRepository,
+                $versions,
+                $productRepository,
+                $apiHeadersBuilder,
+                $cache
+            );
+
+            $ordersImport = new \ReversIO\Services\Orders\OrdersRequestBuilder(
+                $orderRepository,
+                $this->module,
+                new \ReversIO\Services\Product\ModelService(
+                    $this->module,
+                    $orderRepository,
+                    $productsForExportRepository,
+                    $reversIoApiConnect,
+                    $cache,
+                    $exportedProductsRepository
+                ),
+                $loggerService
+            );
+
+            $orderImportService = new \ReversIO\Services\Orders\OrderImportService(
+                $ordersImport,
+                $reversIoApiConnect,
+                $orderRepository
+            );
+
+            // ===== Logique métier =====
+
+            $orderRepository->deleteUnsuccessfullyOrders();
+
+            $orderId = (int) Tools::getValue('orderId');
+            $orderReference = $orderRepository->getOrderReferenceById($orderId);
+
             $reversIoOrderImportResponse = $orderImportService->importOrder($orderId);
+
             if ($reversIoOrderImportResponse->isSuccess()) {
                 $reversIoApiConnect->retrieveOrderUrl($orderReference);
-                $reversIoOrderImportResponse->setRedirectUrl($orderRepository->getOrderUrlById($orderId));
+                $reversIoOrderImportResponse->setRedirectUrl(
+                    $orderRepository->getOrderUrlById($orderId)
+                );
             }
+
             $this->ajaxRender(json_encode($reversIoOrderImportResponse));
-        } catch (Exception $e) {
-            $this->ajaxRender(json_encode($reversIoOrderImportResponse));
+
+        } catch (\Exception $e) {
+            $this->ajaxRender(json_encode([
+                'success' => false,
+                'message' => 'Import failed'
+            ]));
         }
     }
 }
+

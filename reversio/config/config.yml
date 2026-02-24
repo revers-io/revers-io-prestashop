@@ -14,13 +14,23 @@ parameters:
       'REVERS_IO_BRAND_INIT_EXPORT' : 1
 
     hooks:
-      - 'actionAdminOrdersListingFieldsModifier'
+      # GRID (nouvelle grille commandes)
+      - 'actionOrderGridDefinitionModifier'
+      - 'actionOrderGridQueryBuilderModifier'
+
+      # BACK OFFICE
       - 'displayAdminOrder'
+      - 'actionAdminControllerSetMedia'
+      - 'actionOrderStatusUpdate'
+
+      # FRONT OFFICE
       - 'displayOrderDetail'
+      - 'actionFrontControllerSetMedia'
+
+      # PRODUITS
       - 'actionObjectProductUpdateAfter'
       - 'actionObjectProductDeleteAfter'
       - 'actionObjectProductAddAfter'
-      - 'actionAdminControllerSetMedia'
-      - 'actionFrontControllerSetMedia'
-      - 'actionOrderStatusUpdate'
+
+      # ROUTES
       - 'moduleRoutes'

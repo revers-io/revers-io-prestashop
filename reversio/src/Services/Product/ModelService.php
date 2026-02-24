@@ -81,22 +81,29 @@ class ModelService
 
     public function getModelsIds($orderId, $currency)
     {
+
         $productsId = $this->orderRepository->getOrderedProductId($orderId);
+
         $orderObject = new \Order($orderId);
         $modelIdArray = [];
 
         foreach ($productsId as $productId) {
+
             $modelIdResponse = $this->getProductModelId($productId['product_id']);
 
             $product = new Product($productId['product_id']);
+            $productReference = $product->reference ?: $product->id;
 
             if (!$modelIdResponse->isSuccess()) {
                 throw new \Exception(sprintf('The order was not imported because one of the product with reference : 
-                        %s is not valid', $modelIdResponse->getMessage()['productReference']));
+                        %s is not valid', $productReference));
             }
-
-            $modelIdArray[] =
-                [
+            \PrestaShopLogger::addLog(
+                'ReversIO productReference sent: '.$productReference,
+                1
+            );
+            for ($i = 0; $i < (int)$productId['product_quantity']; $i++) {
+                $modelIdArray[] = [
                     'modelId' => $modelIdResponse->getContent(),
                     'price' => [
                         'amount' => $product->price,
@@ -104,6 +111,7 @@ class ModelService
                     ],
                     'orderLineReference' => $orderObject->reference,
                 ];
+            }
         }
 
         return $modelIdArray;
@@ -111,6 +119,7 @@ class ModelService
 
     private function getProductModelId($productId)
     {
+
         $listModelsResponse = $this->cache->getListModels();
 
         if (!$listModelsResponse->isSuccess()) {
@@ -119,11 +128,16 @@ class ModelService
 
         $modelIdResponse = new ReversIoResponse();
 
+        $modelIdFromApi = $this->getProductModelIdIfAlreadyExported($productId, $listModelsResponse);
+
+        if ($modelIdFromApi->isSuccess()) {
+            return $modelIdFromApi;
+        }
         $exportedProductId = $this->exportedProductsRepository->isProductExported($productId);
 
-
 //        If $modelIdResponse is not successful, product not exported
-        if ($exportedProductId === null) {
+        if (empty($exportedProductId)) {
+
             $modelIdResponse = $this->reversIoApiConnect->putProduct($productId, Context::getContext()->language->id);
 
             $this->cache->updateModelList();

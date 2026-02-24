@@ -1,9 +1,12 @@
 services:
+  _defaults:
+    public: true
+    autowire: false
+    autoconfigure: false
+
   reversio.module:
     class: 'ReversIO'
-    factory: ['Module', 'getInstanceByName']
-    arguments:
-      - 'reversio'
+    public: true
 
   installer:
     class: 'ReversIO\Install\Installer'
@@ -89,6 +92,7 @@ services:
 
   orderImportService:
     class: 'ReversIO\Services\Orders\OrderImportService'
+    public: true
     arguments:
       - '@ordersImport'
       - '@reversIoApiConnect'

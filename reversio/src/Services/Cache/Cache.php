@@ -32,48 +32,34 @@ use ReversIO\Services\APIConnect\ReversIOApi;
 
 class Cache
 {
-    /** List of product from Revers.io */
+    private $reversIoApiConnect;
+
     private $listModels = null;
+    private $listBrands = null;
 
-    private $listBrands;
-
-    /** @var \ReversIO */
-    private $module;
-
-    public function __construct(\ReversIO $module)
+    public function __construct(ReversIOApi $api)
     {
-        $this->module = $module;
+        $this->reversIoApiConnect = $api;
     }
 
     public function getListModels()
     {
-        if (null === $this->listModels) {
-            $this->updateModelList();
+        if ($this->listModels === null) {
+            $this->listModels = $this->reversIoApiConnect->getListModels();
         }
-
         return $this->listModels;
-    }
-
-    public function updateModelList()
-    {
-        /** @var ReversIOApi $reversIOAPIConnect */
-        $reversIOAPIConnect = $this->module->getContainer()->get('reversIoApiConnect');
-        $this->listModels = $reversIOAPIConnect->getListModels();
     }
 
     public function getBrands()
     {
-        if (null === $this->listBrands) {
-            $this->updateBrandsList();
+        if ($this->listBrands === null) {
+            $this->listBrands = $this->reversIoApiConnect->getListBrands();
         }
-
         return $this->listBrands;
     }
 
-    public function updateBrandsList()
+    public function updateModelList()
     {
-        /** @var ReversIOApi $reversIOAPIConnect */
-        $reversIOAPIConnect = $this->module->getContainer()->get('reversIoApiConnect');
-        $this->listBrands = $reversIOAPIConnect->getListBrands();
+        $this->listModels = $this->reversIoApiConnect->getListModels();
     }
 }

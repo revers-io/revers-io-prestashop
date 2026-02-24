@@ -28,6 +28,38 @@
 
 use ReversIO\Config\Config;
 use ReversIO\Services\Autentification\APIAuthentication;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Doctrine\DBAL\Query\QueryBuilder;
+use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\BadgeColumn;
+use ReversIO\Services\Decoder\Decoder;
+use ReversIO\Services\APIConnect\Token;
+use ReversIO\Services\Versions\Versions;
+use ReversIO\Services\Cache\Cache;
+use ReversIO\Services\Getters\ColourGetter;
+use ReversIO\Repository\OrderRepository;
+use ReversIO\Repository\ProductRepository;
+use ReversIO\Repository\BrandRepository;
+use ReversIO\Repository\CategoryRepository;
+use ReversIO\Repository\CategoryMapRepository;
+use ReversIO\Repository\ProductsForExportRepository;
+use ReversIO\Repository\ExportedProductsRepository;
+use ReversIO\Repository\Logs\LogsRepository;
+use ReversIO\Services\CategoryMapService;
+use ReversIO\Services\Product\ProductService;
+use ReversIO\Services\Brand\BrandService;
+use ReversIO\Services\Orders\OrdersRetrieveService;
+use ReversIO\Services\Orders\OrderStatus;
+use ReversIO\Services\Product\ModelService;
+use ReversIO\Services\Orders\OrdersRequestBuilder;
+use ReversIO\Services\Orders\OrderImportService;
+use ReversIO\Services\APIConnect\ReversIOApi;
+use ReversIO\Services\APIConnect\ApiClient;
+use ReversIO\Services\APIConnect\ApiHeadersBuilder;
+use ReversIO\Factory\ClientFactory;
+use ReversIO\Proxy\ProxyApiClient;
+use ReversIO\Adapter\ArrayAdapter;
+use ReversIO\Services\Product\ProductsForExportService;
+use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\HtmlColumn;
 
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -39,8 +71,8 @@ class ReversIO extends Module
 
     public function __construct()
     {
-        $this->name = $this->l('reversio');
-        $this->version = '1.0.0';
+        $this->name = 'reversio';
+        $this->version = '1.2.1';
         $this->tab = 'shipping_logistics';
         $this->author = 'Revers.io';
         $this->need_instance = 0;
@@ -67,32 +99,69 @@ class ReversIO extends Module
 
     public function install()
     {
-        /** @var \ReversIO\Install\Installer $installer */
-        $installer = $this->getContainer()->get('installer');
+        require_once $this->getLocalPath() . 'src/Install/Installer.php';
+        require_once $this->getLocalPath() . 'src/Install/DatabaseInstall.php';
 
-        return parent::install() && $installer->init();
+        $installer = new \ReversIO\Install\Installer($this);
+
+        return parent::install() &&
+            $installer->init() &&
+            $this->installTabs();
     }
 
     public function uninstall()
     {
-        /** @var \ReversIO\Uninstall\Uninstaller $uninstaller */
-        $uninstaller = $this->getContainer()->get('uninstaller');
+        require_once $this->getLocalPath() . 'src/Uninstall/Uninstaller.php';
+        require_once $this->getLocalPath() . 'src/Install/DatabaseInstall.php';
+
+        $uninstaller = new \ReversIO\Uninstall\Uninstaller($this);
+
         return parent::uninstall() && $uninstaller->init();
     }
+
 
     public function getContent()
     {
         Tools::redirectAdmin($this->context->link->getAdminLink(ReversIO\Config\Config::CONTROLLER_CONFIGURATION));
     }
 
-    public function getContainer()
+//    public function getContainer(): ContainerInterface
+//    {
+//        if (null === $this->moduleContainer) {
+//            $this->compile(); // construit le conteneur même si le module est en cours d'installation
+//        }
+//
+//        return $this->moduleContainer;
+//    }
+    protected function getPsService(string $class)
     {
-        return $this->moduleContainer;
+        return SymfonyContainer::getInstance()->get($class);
     }
 
     /**
      * Return array
      */
+    private function installTabs()
+    {
+        $tabs = $this->getTabs();
+        foreach ($tabs as $tabData) {
+            $tab = new Tab();
+            $tab->class_name = $tabData['class_name'];
+            $tab->module = $this->name;
+            $tab->id_parent = (int) Tab::getIdFromClassName($tabData['ParentClassName']);
+
+            // Nom multilingue
+            $languages = Language::getLanguages(false);
+            foreach ($languages as $lang) {
+                $tab->name[$lang['id_lang']] = $tabData['name'];
+            }
+
+            if (!$tab->add()) {
+                return false;
+            }
+        }
+        return true;
+    }
     public function getTabs()
     {
         return [
@@ -142,7 +211,6 @@ class ReversIO extends Module
             ],
         ];
     }
-
     public function hookActionAdminOrdersListingFieldsModifier($params)
     {
         /** @var \ReversIO\Services\Orders\OrderListBuilder $orderListBuilder */
@@ -160,6 +228,65 @@ class ReversIO extends Module
             array_slice($params['fields'], 3, count($params['fields']) - 1, true) ;
 
         $params['fields'] = $res;
+    }
+    public function hookActionOrderGridDefinitionModifier(array $params)
+    {
+        $definition = $params['definition'];
+
+        $definition->getColumns()->addAfter(
+            'osname',
+            (new HtmlColumn('reversio_status'))
+                ->setName($this->l('Revers.io'))
+                ->setOptions([
+                    'field' => 'reversio_html',
+                ])
+        );
+    }
+
+
+    public function hookActionOrderGridQueryBuilderModifier(array $params)
+    {
+        $langId = (int) $this->context->language->id;
+
+        foreach (['query_builder', 'search_query_builder'] as $qbKey) {
+
+            if (empty($params[$qbKey])) {
+                continue;
+            }
+
+            $qb = $params[$qbKey];
+
+            $qb->addSelect("
+            CONCAT(
+                '<span class=\"badge\" style=\"background-color:', rios.color, ';color:white;\">',
+                riosl.name,
+                '</span>'
+            ) AS reversio_html
+        ");
+
+            $qb->addSelect("riosl.name AS reversio_status");
+
+            $qb->leftJoin(
+                'o',
+                _DB_PREFIX_.'revers_io_orders',
+                'rio',
+                'rio.id_order = o.id_order'
+            );
+
+            $qb->leftJoin(
+                'rio',
+                _DB_PREFIX_.'revers_io_orders_status',
+                'rios',
+                'rios.id_order_status = rio.id_order_status'
+            );
+
+            $qb->leftJoin(
+                'rios',
+                _DB_PREFIX_.'revers_io_orders_status_lang',
+                'riosl',
+                'riosl.id_order_status = rios.id_order_status AND riosl.id_lang = '.$langId
+            );
+        }
     }
 
     public function hookActionAdminControllerSetMedia()
@@ -189,108 +316,244 @@ class ReversIO extends Module
 
     public function hookDisplayAdminOrder($params)
     {
-        /** @var APIAuthentication $settingAuthentication */
-        /** @var ReversIO\Services\Decoder\Decoder $decoder */
-        $settingAuthentication = $this->getContainer()->get('autentification');
-        $decoder = $this->getContainer()->get('reversio_decoder');
+        try {
 
-        $apiPublicKey = Configuration::get(Config::PUBLIC_KEY);
-        $apiSecretKey = Configuration::get(Config::SECRET_KEY);
+            // --- AUTH ---
+            $decoder = new \ReversIO\Services\Decoder\Decoder();
+            $token = new \ReversIO\Services\APIConnect\Token($decoder);
+            $settingAuthentication = new \ReversIO\Services\Autentification\APIAuthentication($token);
 
-        if ($settingAuthentication->authentication($apiPublicKey, $decoder->base64Decoder($apiSecretKey))) {
-            $orderId = $params['id_order'];
+            $apiPublicKey = Configuration::get(\ReversIO\Config\Config::PUBLIC_KEY);
+            $apiSecretKey = Configuration::get(\ReversIO\Config\Config::SECRET_KEY);
 
-            /** @var \ReversIO\Repository\OrderRepository $orderRepository */
-            $orderRepository = $this->getContainer()->get('orderRepository');
-            $logCreated = $orderRepository->getOrderLogDate($orderId);
+            if ($settingAuthentication->authentication($apiPublicKey, $decoder->base64Decoder($apiSecretKey))) {
 
-            $orderStatus = $orderRepository->getOrderStatus($orderId);
+                $orderId = (int) $params['id_order'];
 
-            if ((int) $orderStatus === ReversIO\Config\Config::CHECK_ERROR_LOG) {
-                $this->context->smarty->assign(array(
-                    'logCreated' => $logCreated,
-                    'logLink' => $this->context->link->getAdminLink(ReversIO\Config\Config::CONTROLLER_LOGS),
-                    'orderId' => $orderId,
-                ));
+                // --- ORDER REPOSITORY ---
+                $colourGetter = new \ReversIO\Services\Getters\ColourGetter();
+                $orderRepository = new \ReversIO\Repository\OrderRepository($colourGetter);
 
-                return $this->display(__FILE__, 'views/templates/admin/hook/display-admin-order.tpl');
-            } elseif ((int) $orderStatus !== Config::SUCCESSFULLY_IMPORTED) {
-                $this->context->smarty->assign(array(
-                    'orderId' => $orderId,
-                ));
-                return $this->display(__FILE__, 'views/templates/admin/hook/display-initial-order-export.tpl');
+                $logCreated = $orderRepository->getOrderLogDate($orderId);
+                $orderStatus = $orderRepository->getOrderStatus($orderId);
+
+                if ((int) $orderStatus === \ReversIO\Config\Config::CHECK_ERROR_LOG) {
+
+                    $this->context->smarty->assign([
+                        'logCreated' => $logCreated,
+                        'logLink' => $this->context->link->getAdminLink(\ReversIO\Config\Config::CONTROLLER_LOGS),
+                        'orderId' => $orderId,
+                    ]);
+
+                    return $this->display(__FILE__, 'views/templates/admin/hook/display-admin-order.tpl');
+
+                } elseif ((int) $orderStatus !== \ReversIO\Config\Config::SUCCESSFULLY_IMPORTED) {
+
+                    $this->context->smarty->assign([
+                        'orderId' => $orderId,
+                    ]);
+
+                    return $this->display(__FILE__, 'views/templates/admin/hook/display-initial-order-export.tpl');
+                }
             }
+
+        } catch (\Exception $e) {
+            // silencieux pour ne pas casser l'admin
         }
     }
 
+
+
     public function hookDisplayOrderDetail($params)
     {
-        /** @var \ReversIO\Repository\OrderRepository $orderRepository */
-        /** @var \ReversIO\Services\Orders\OrderStatus $orderStatuses */
-        /** @var \ReversIO\Services\Orders\OrdersRetrieveService $orderRetrieveService */
-        $orderRepository = $this->getContainer()->get('orderRepository');
-        $orderStatuses = $this->getContainer()->get('orderStatuses');
-        $reversIoLink = $orderRepository->getOrderUrlById($params['order']->id);
-        $orderRetrieveService = $this->getContainer()->get('ordersRetrieveService');
 
-        if (in_array($params['order']->current_state, $orderStatuses->getOrderStatusForImport())) {
-            $this->context->smarty->assign(array(
-                'orderId' => $params['order']->id,
-            ));
+        try {
 
-            $orderReturnInformation =
-                $orderRetrieveService->getRetrievedOrder($params['order']->reference)['orderLines'][0];
+            // --- REPOSITORY ---
+            $colourGetter = new \ReversIO\Services\Getters\ColourGetter();
+            $orderRepository = new \ReversIO\Repository\OrderRepository($colourGetter);
+
+            // --- ORDER STATUS SERVICE ---
+            $orderStatuses = new \ReversIO\Services\Orders\OrderStatus();
+
+            // --- CORE API STACK ---
+            $decoder = new \ReversIO\Services\Decoder\Decoder();
+            $token = new \ReversIO\Services\APIConnect\Token($decoder);
+            $versions = new \ReversIO\Services\Versions\Versions();
+
+            $clientFactory = new \ReversIO\Factory\ClientFactory($versions);
+            $apiClient = new \ReversIO\Services\APIConnect\ApiClient($clientFactory);
+            $proxyApiClient = new \ReversIO\Proxy\ProxyApiClient($token, $apiClient, $decoder);
+            $apiHeadersBuilder = new \ReversIO\Services\APIConnect\ApiHeadersBuilder($token);
+
+            // --- OTHER REPOS ---
+            $logsRepository = new \ReversIO\Repository\Logs\LogsRepository();
+            $categoryRepository = new \ReversIO\Repository\CategoryRepository();
+            $categoryMapRepository = new \ReversIO\Repository\CategoryMapRepository();
+            $productsForExportRepository = new \ReversIO\Repository\ProductsForExportRepository();
+            $exportedProductsRepository = new \ReversIO\Repository\ExportedProductsRepository();
+            $productRepository = new \ReversIO\Repository\ProductRepository();
+            $brandRepository = new \ReversIO\Repository\BrandRepository();
+
+            // --- SERVICES ---
+            $categoryMapService = new \ReversIO\Services\CategoryMapService($categoryMapRepository);
+            $productImporter = new \ReversIO\Services\Product\ProductService($categoryMapService);
+            $brandService = new \ReversIO\Services\Brand\BrandService($this, new \ReversIO\Adapter\ArrayAdapter());
+
+            $loggerService = new \ReversIO\Repository\Logs\Logger(
+                $orderRepository,
+                $productRepository,
+                $brandRepository
+            );
+
+            // --- ORDERS RETRIEVE SERVICE ---
+            $ordersRetrieveService = new \ReversIO\Services\Orders\OrdersRetrieveService();
+
+            // --- API ---
+            $reversIoApiConnect = new \ReversIO\Services\APIConnect\ReversIOApi(
+                $productImporter,
+                $orderRepository,
+                $logsRepository,
+                $ordersRetrieveService,
+                $loggerService,
+                $token,
+                $proxyApiClient,
+                $productsForExportRepository,
+                $categoryMapRepository,
+                $categoryRepository,
+                $brandService,
+                $exportedProductsRepository,
+                $versions,
+                $productRepository,
+                $apiHeadersBuilder,
+                null // cache injecté après
+            );
+
+            // --- Cache ---
+            $cache = new \ReversIO\Services\Cache\Cache($reversIoApiConnect);
+            $reversIoApiConnect->setCache($cache);
+
+            // --- Injection API dans OrdersRetrieveService ---
+            $ordersRetrieveService->setApi($reversIoApiConnect);
+
+            // ---------------- LOGIQUE ----------------
+
+            $order = $params['order'];
+
+            $reversIoLink = $orderRepository->getOrderUrlById($order->id);
+
+            if (!in_array($order->current_state, $orderStatuses->getOrderStatusForImport())) {
+                return;
+            }
+
+            $this->context->smarty->assign([
+                'orderId' => $order->id,
+            ]);
+
+            $orderData = $ordersRetrieveService->getRetrievedOrder($order->reference);
+            if (!$orderData || !$orderData->isSuccess()) {
+                return;
+            }
+
+            $orderContent = $orderData->getContent();
+
+            $orderReturnInformation = null;
+            if (!empty($orderContent['value']['orderLines'])) {
+                $orderReturnInformation = $orderContent['value']['orderLines'][0];
+            }
 
             if (empty($orderReturnInformation)) {
                 return $this->display(__FILE__, 'views/templates/hook/display-order-initial-export.tpl');
             }
 
-            if ($orderReturnInformation['isOpenForClaims'] && $reversIoLink) {
-                $this->context->smarty->assign(array(
-                    'reversIoLink' => $reversIoLink,
-                ));
-
+            if (!empty($orderReturnInformation['isOpenForClaims']) && $reversIoLink) {
+                $this->context->smarty->assign(['reversIoLink' => $reversIoLink]);
                 return $this->display(__FILE__, 'views/templates/hook/display-order-detail.tpl');
             }
 
-            if (!$orderReturnInformation['isOpenForClaims']) {
+            if (isset($orderReturnInformation['isOpenForClaims']) && !$orderReturnInformation['isOpenForClaims']) {
                 return $this->display(__FILE__, 'views/templates/hook/display-order-disable-button.tpl');
             }
 
-            if ($orderReturnInformation['hasOpenFile'] &&
-                !empty($orderReturnInformation['openFiles']) && $reversIoLink
-            ) {
-                $this->context->smarty->assign(array(
-                    'reversIoLink' => $reversIoLink,
-                ));
-
+            if (!empty($orderReturnInformation['hasOpenFile']) && !empty($orderReturnInformation['openFiles']) && $reversIoLink) {
+                $this->context->smarty->assign(['reversIoLink' => $reversIoLink]);
                 return $this->display(__FILE__, 'views/templates/hook/display-order-return.tpl');
             }
 
             return $this->display(__FILE__, 'views/templates/hook/display-order-import-failed.tpl');
+
+        } catch (\Throwable $e) {
+            PrestaShopLogger::addLog('ReversIO hookDisplayOrderDetail error: '.$e->getMessage(), 3);
+            return;
         }
     }
 
+
+
+
     public function hookActionObjectProductUpdateAfter($params)
     {
-        /** @var \ReversIO\Services\Product\ProductsForExportService $productForExportService */
-        $productForExportService = $this->getContainer()->get('productForExportService');
-        $productForExportService->addProductForExport($params['object']->id);
-    }
+        try {
 
+            $productsForExportRepository = new \ReversIO\Repository\ProductsForExportRepository();
+            $exportedProductsRepository = new \ReversIO\Repository\ExportedProductsRepository();
+            $versions = new \ReversIO\Services\Versions\Versions();
+
+            $productForExportService = new \ReversIO\Services\Product\ProductsForExportService(
+                $productsForExportRepository,
+                $exportedProductsRepository,
+                $versions
+            );
+
+            $productForExportService->addProductForExport($params['object']->id);
+
+        } catch (\Exception $e) {
+            // ne jamais casser le back-office
+        }
+    }
     public function hookActionObjectProductAddAfter($params)
     {
-        /** @var \ReversIO\Services\Product\ProductsForExportService $productForExportService */
-        $productForExportService = $this->getContainer()->get('productForExportService');
-        $productForExportService->addProductForExport($params['object']->id);
+        try {
+
+            $productsForExportRepository = new \ReversIO\Repository\ProductsForExportRepository();
+            $exportedProductsRepository = new \ReversIO\Repository\ExportedProductsRepository();
+            $versions = new \ReversIO\Services\Versions\Versions();
+
+            $productForExportService = new \ReversIO\Services\Product\ProductsForExportService(
+                $productsForExportRepository,
+                $exportedProductsRepository,
+                $versions
+            );
+
+            $productForExportService->addProductForExport($params['object']->id);
+
+        } catch (\Exception $e) {
+            // ne jamais casser le back-office
+        }
     }
+
 
     public function hookActionObjectProductDeleteAfter($params)
     {
-        /** @var \ReversIO\Services\Product\ProductsForExportService $productForExportService */
-        $productForExportService = $this->getContainer()->get('productForExportService');
-        $productForExportService->deleteProductFromExport($params['object']->id);
+        try {
+
+            $productsForExportRepository = new \ReversIO\Repository\ProductsForExportRepository();
+            $exportedProductsRepository = new \ReversIO\Repository\ExportedProductsRepository();
+            $versions = new \ReversIO\Services\Versions\Versions();
+
+            $productForExportService = new \ReversIO\Services\Product\ProductsForExportService(
+                $productsForExportRepository,
+                $exportedProductsRepository,
+                $versions
+            );
+
+            $productForExportService->deleteProductFromExport($params['object']->id);
+
+        } catch (\Exception $e) {
+            // ne jamais casser le back-office
+        }
     }
+
 
     public function hookModuleRoutes()
     {
@@ -313,30 +576,132 @@ class ReversIO extends Module
     public function hookActionOrderStatusUpdate($params)
     {
         $currentStatusName = $params['newOrderStatus']->name;
-        /** @var \ReversIO\Repository\OrderRepository $orderRepository */
-        /** @var  \ReversIO\Services\Orders\OrderStatus $orderStatuses */
-        /** @var \ReversIO\Services\Orders\OrderImportService $orderImportService */
-        /** @var \ReversIO\Services\APIConnect\ReversIOApi $reversIoApiConnect */
-        $orderRepository = $this->getContainer()->get('orderRepository');
-        $orderStatuses = $this->getContainer()->get('orderStatuses');
-        $orderImportService = $this->getContainer()->get('orderImportService');
-        $reversIoApiConnect = $this->getContainer()->get('reversIoApiConnect');
 
-        $currentStatusId = $orderRepository->getOrderStateByStateName($currentStatusName);
-        $statuses = $orderStatuses->getOrderStatusForImport();
+        try {
 
-        if (in_array($currentStatusId, $statuses)) {
-            try {
-                $response = $orderImportService->importOrder($params['id_order']);
-                if ($response->isSuccess()) {
-                    $orderReference = $orderRepository->getOrderReferenceById($params['id_order']);
+            // --- CORE ---
+            $decoder = new \ReversIO\Services\Decoder\Decoder();
+            $token = new \ReversIO\Services\APIConnect\Token($decoder);
+            $versions = new \ReversIO\Services\Versions\Versions();
+
+            // --- REPOSITORIES ---
+            $colourGetter = new \ReversIO\Services\Getters\ColourGetter();
+            $orderRepository = new \ReversIO\Repository\OrderRepository($colourGetter);
+            $productRepository = new \ReversIO\Repository\ProductRepository();
+            $brandRepository = new \ReversIO\Repository\BrandRepository();
+            $logsRepository = new \ReversIO\Repository\Logs\LogsRepository();
+            $categoryRepository = new \ReversIO\Repository\CategoryRepository();
+            $categoryMapRepository = new \ReversIO\Repository\CategoryMapRepository();
+            $productsForExportRepository = new \ReversIO\Repository\ProductsForExportRepository();
+            $exportedProductsRepository = new \ReversIO\Repository\ExportedProductsRepository();
+
+            // --- SERVICES ---
+            $categoryMapService = new \ReversIO\Services\CategoryMapService($categoryMapRepository);
+            $productImporter = new \ReversIO\Services\Product\ProductService($categoryMapService);
+            $brandService = new \ReversIO\Services\Brand\BrandService($this, new \ReversIO\Adapter\ArrayAdapter());
+
+            // OrdersRetrieveService TEMP (injection après)
+            $ordersRetrieveService = new \ReversIO\Services\Orders\OrdersRetrieveService(null);
+
+            $loggerService = new \ReversIO\Repository\Logs\Logger(
+                $orderRepository,
+                $productRepository,
+                $brandRepository
+            );
+
+            // --- API STACK ---
+            $clientFactory = new \ReversIO\Factory\ClientFactory($versions);
+            $apiClient = new \ReversIO\Services\APIConnect\ApiClient($clientFactory);
+            $proxyApiClient = new \ReversIO\Proxy\ProxyApiClient($token, $apiClient, $decoder);
+            $apiHeadersBuilder = new \ReversIO\Services\APIConnect\ApiHeadersBuilder($token);
+
+            // --- API ---
+            $reversIoApiConnect = new \ReversIO\Services\APIConnect\ReversIOApi(
+                $productImporter,
+                $orderRepository,
+                $logsRepository,
+                $ordersRetrieveService,
+                $loggerService,
+                $token,
+                $proxyApiClient,
+                $productsForExportRepository,
+                $categoryMapRepository,
+                $categoryRepository,
+                $brandService,
+                $exportedProductsRepository,
+                $versions,
+                $productRepository,
+                $apiHeadersBuilder,
+                null // cache injecté après
+            );
+
+            // --- CACHE ---
+            $cache = new \ReversIO\Services\Cache\Cache($reversIoApiConnect);
+            $reversIoApiConnect->setCache($cache);
+            // --- INJECTION CROISÉE ---
+            $reversIoApiConnect->setOrdersRetrieveService($ordersRetrieveService);
+            $ordersRetrieveService->setApi($reversIoApiConnect);
+
+            // --- ORDER STATUS SERVICE ---
+            $orderStatuses = new \ReversIO\Services\Orders\OrderStatus();
+
+            // --- MODEL SERVICE ---
+            $modelService = new \ReversIO\Services\Product\ModelService(
+                $this,
+                $orderRepository,
+                $productsForExportRepository,
+                $reversIoApiConnect,
+                $cache,
+                $exportedProductsRepository
+            );
+
+            // --- ORDER IMPORT ---
+            $ordersImport = new \ReversIO\Services\Orders\OrdersRequestBuilder(
+                $orderRepository,
+                $this,
+                $modelService,
+                $loggerService
+            );
+
+            $orderImportService = new \ReversIO\Services\Orders\OrderImportService(
+                $ordersImport,
+                $reversIoApiConnect,
+                $orderRepository
+            );
+
+            // --- LOGIC ---
+            $currentStatusId = $orderRepository->getOrderStateByStateName($currentStatusName);
+            $statuses = $orderStatuses->getOrderStatusForImport();
+
+            if (in_array($currentStatusId, $statuses)) {
+
+                $orderId = (int)$params['id_order'];
+
+                $response = $orderImportService->importOrder($orderId);
+
+                if ($response && $response->isSuccess()) {
+
+                    $orderReference = $orderRepository->getOrderReferenceById($orderId);
                     $reversIoApiConnect->retrieveOrderUrl($orderReference);
+
+                } else {
+                    \PrestaShopLogger::addLog(
+                        'ReversIO importOrder failed for order '.$orderId,
+                        3
+                    );
                 }
-            } catch (Exception $e) {
-                $this->context->controller->errors[] = $this->l('Order was not imported');
             }
+
+        } catch (\Throwable $e) {
+
+            \PrestaShopLogger::addLog(
+                'ReversIO hookActionOrderStatusUpdate error: '.$e->getMessage(),
+                3
+            );
         }
     }
+
+
 
     /**
      * Require autoloader

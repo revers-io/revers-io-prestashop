@@ -74,6 +74,7 @@ class OrdersRequestBuilder
 
     public function getOrderInformationForImport($orderId)
     {
+
         $orderId = $this->getOrderForImports($orderId);
 
         if (!$orderId) {
@@ -82,6 +83,7 @@ class OrdersRequestBuilder
 
         try {
             $orderImportData = $this->getOrderImportData($orderId);
+
         } catch (\Exception $e) {
             throw new Exception('Order was not imported');
         }
@@ -116,7 +118,12 @@ class OrdersRequestBuilder
         }
 
         try {
+
             $modelIdArray = $this->modelService->getModelsIds($idOrder, $currency->iso_code);
+            \PrestaShopLogger::addLog(
+                'ReversIO products payload: '.json_encode($modelIdArray),
+                1
+            );
         } catch (\Exception $e) {
             $this->logger->insertOrderLogs(
                 $orderObject->reference,

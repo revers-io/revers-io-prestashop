@@ -30,6 +30,15 @@ use ReversIO\Controller\ReversIOAbstractAdminController;
 use ReversIO\Config\Config;
 use ReversIO\Repository\TabRepository;
 use ReversIO\Services\Autentification\APIAuthentication;
+use ReversIO\MultiSelect\MultiSelect;
+use ReversIO\Services\Decoder\Decoder;
+use ReversIO\Services\APIConnect\Token;
+use ReversIO\Repository\OrderRepository;
+use ReversIO\Repository\ProductRepository;
+use ReversIO\Repository\BrandRepository;
+use ReversIO\Repository\Logs\Logger;
+use ReversIO\Services\Getters\ColourGetter;
+
 
 class AdminReversIOSettingsController extends ReversIOAbstractAdminController
 {
@@ -55,7 +64,9 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
         $orderDateTo = Configuration::get(Config::ORDER_DATE_TO);
 
         /** @var \ReversIO\MultiSelect\MultiSelect $reversioMultiSelect */
-        $reversioMultiSelect = $this->module->getContainer()->get('reversioMultiSelect');
+        $reversioMultiSelect = new MultiSelect(
+            $this->context->language->id
+        );
 
         $this->context->smarty->assign(
             array(
@@ -263,20 +274,32 @@ class AdminReversIOSettingsController extends ReversIOAbstractAdminController
 
         /** @var APIAuthentication $settingAuthentication */
         /** @var  \ReversIO\Services\Decoder\Decoder $decoder */
-        $settingAuthentication = $this->module->getContainer()->get('autentification');
-        $decoder = $this->module->getContainer()->get('reversio_decoder');
+        $decoder = new Decoder();
+        $token = new Token($decoder);
+        $settingAuthentication = new APIAuthentication($token);
 
         /** @var TabRepository $tab */
-        $tab = $this->module->getContainer()->get('tabRepository');
+        $tab = new TabRepository();
 
         $parentTabId = $tab->getInvisibleTabId();
 
         /** Delete logs when the controller is loaded */
-        if (Configuration::get(Config::STORE_LOGS) !== "0"
-            && Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0") {
-            /** @var \ReversIO\Repository\Logs\Logger $loggerService */
-            $loggerService = $this->module->getContainer()->get('loggerService');
-            $loggerService->deleteLogs(Configuration::get(Config::STORE_LOGS));
+        if (
+            Configuration::get(Config::STORE_LOGS) !== "0"
+            && Configuration::get(Config::ENABLE_LOGGING_SETTING) !== "0"
+        ) {
+
+
+            $colourGetter = new ColourGetter();
+            $orderRepository = new OrderRepository($colourGetter);
+            $productRepository = new ProductRepository();
+            $brandRepository = new BrandRepository();
+
+            $loggerService = new Logger(
+                $orderRepository,
+                $productRepository,
+                $brandRepository
+            );
         }
 
         if (Tools::isSubmit('submitReversIOAuthentication') &&
